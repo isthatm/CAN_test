@@ -1,0 +1,13 @@
+{
+    "MOTOR_CMD":
+    {
+        "MOTOR_CMD_steer": "0x8",
+        "MOTOR_CMD_drive":  "0x10"
+    },
+
+    "MOTOR_STATUS":
+    {
+        "MOTOR_STATUS_wheel_error": "0x0",
+        "MOTOR_STATUS_speed_kph": "0x9F"
+    }
+}

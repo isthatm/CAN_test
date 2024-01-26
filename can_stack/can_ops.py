@@ -12,12 +12,10 @@ from typing import Optional
 """
 
 class Network:
-    def __init__(self, db_path: str, channel: Optional[str] = None):
+    def __init__(self, channel: Optional[str] = None):
         self.channel = channel
-        self.db = cantools.db.load_file(filename=db_path, database_format='dbc')
         self.bus = can.interface.Bus(channel=self.channel,
-                                     interface='virtual')    
-        print(self.db.nodes)  
+                                     interface='virtual')   
 
     def init_isotp(self,
                    send_id,
@@ -31,13 +29,14 @@ class Network:
                             )
         else:
             self.stack = isotp.CanStack(bus=self.bus, 
-                                        address=isotp.Address(addr_mode, txid=send_id, rxid=recv_id))
+                                        address=isotp.Address(addr_mode, txid=send_id, rxid=recv_id),
+                                        error_handler=self.error_handler())
             self.stack.start()
         
-    def send_msg(self, msg):
+    def send_data_frame(self, msg):
         self.stack.send(msg)
 
-    def receive_msg(self):
+    def receive_data_frame(self):
         received_msg = self.stack.recv()
         return received_msg        
     
@@ -45,5 +44,6 @@ class Network:
         logging.error("Error occured: %s - %s" % (error.__class__.__name__, str(error)))
 
     def __del__(self):
+        # pass
         # self.stack.stop()
         self.bus.shutdown()

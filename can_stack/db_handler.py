@@ -8,4 +8,12 @@ class CAN_database:
         return self.db.nodes
     
     def list_messages(self):
-        return self.db.messages    
+        return self.db.messages   
+
+    def list_node_msg(self):
+        print(self.db.messages[3].signals)
+        print('========')
+
+if __name__ == '__main__':
+    DB = CAN_database("./Example.dbc")
+    DB.list_node_msg()
