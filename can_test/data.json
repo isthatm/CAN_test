@@ -15,11 +15,11 @@
     [
         {
             "SIGNAL_NAME": "MOTOR_STATUS_wheel_error",
-            "VALUE": "0x0"
+            "VALUE": "0"
         },
         {
-            "SIGNAL_NAME": "MOTOR_STATUS_speed_rpm",
-            "VALUE": "0x9F"
+            "SIGNAL_NAME": "MOTOR_STATUS_speed",
+            "VALUE": "159"
         }
     ]
 }
