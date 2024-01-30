@@ -2,18 +2,27 @@ import can
 import json
 import isotp
 import logging
+import cantools.tester as tester
 
 from .db_handler import CAN_database
-from typing import List, Dict, Optional
+from typing import List, Union
 
 
 """
     TODO:
-        +) Apply filter to nodes
+        +) Apply iso-tp 
+        +) Refactor data.json to follow:
+            {
+                message_name: {
+                    signal_1: value
+                    signal_2:
+                }
+            }
         +) Define which session each node supports
 """
 
-RECORDED_DATA_PATH = r"./can_stack/data.json"
+RECORDED_DATA_PATH = r"./can_test/data.json"
+
 
 class CAN_Node ():
     def __init__(self, node_name: str, 
@@ -25,8 +34,7 @@ class CAN_Node ():
                     using pure python-can. In such case each bus is 
                     considered a node.
         """
-        self.bus =  can.interface.Bus(channel=channel, 
-                                      interface=interface) 
+        self.bus =  can.interface.Bus(channel=channel, interface=interface) 
         self.data_base = data_base
         self.node_name = node_name
         self.expected_msgs = self.data_base.list_receiving_msg(node_name)
@@ -51,7 +59,7 @@ class CAN_Node ():
         else:
             self.stack = isotp.CanStack(bus=self.bus, 
                                         address=isotp.Address(addr_mode, txid=send_id, rxid=recv_id),
-                                        error_handler=self.error_handler())
+                                        error_handler=self._error_handler())
             self.stack.start()
         
     def send_isotp_msg(self, msg):
@@ -77,13 +85,30 @@ class CAN_Node ():
         received_msg = self.stack.recv()
         return received_msg   
 
-    def receive(self, time_out):
+    def receive(self, time_out) -> can.Message:
         """
             Read CAN frames that sent on the bus. Returns a can.Message or 
-            None on timeout
+            None on timeout - OSI LV1,2
         """
         msg = self.bus.recv(timeout=time_out)
         return msg
+
+    def check_data(self, 
+                   arriving_msg: can.Message, 
+                   expected_msg: dict) -> Union[can.Message, None]:
+        if arriving_msg != None:
+            try:
+                expected_msg_name = list(expected_msg.keys())[0]
+                self._check_input_signal_size(expected_msg)
+                db_msg = self.data_base.db.get_message_by_frame_id(arriving_msg.arbitration_id)
+                expected_frame = db_msg.encode(expected_msg.get(expected_msg_name), scaling=False)
+                assert arriving_msg.data == expected_frame
+                return arriving_msg.data
+            except AssertionError as error:
+                self._error_handler(error)
+                return None
+        else:
+            pass
 
     def _pack_frame(self, msg_name: str) -> can.Message:
         """
@@ -97,21 +122,47 @@ class CAN_Node ():
             :return: a non-extended CAN frame
             :return type: can.Message
         """
-        data_formatter = {}
+        data_formatter, check_pack = {}, {}
+
         with open(RECORDED_DATA_PATH) as file:
             signal_values = json.loads(file.read())
 
+        check_pack[msg_name] = signal_values[msg_name]
+        self._check_input_signal_size(check_pack)
         msg = self.data_base.db.get_message_by_name(msg_name)
-        for signal in signal_values[msg_name]:
-            data_formatter[signal["SIGNAL_NAME"]] = int(signal["VALUE"], 10)
-        data_frame = msg.encode(data_formatter, scaling=False)
-        can_frame = can.Message(data=data_frame, arbitration_id=msg.frame_id, is_extended_id=False, check=True)
+
+        for signal_name, signal_value in signal_values[msg_name].items():
+            data_formatter[signal_name] = int(signal_value, 10)
+        encoded_data_frame = msg.encode(data_formatter, scaling=False)
+        can_frame = can.Message(data=encoded_data_frame, 
+                                arbitration_id=msg.frame_id, 
+                                is_extended_id=False, 
+                                check=True)
         return can_frame   
     
-    def _error_handler(error):
-        logging.error("Error occured: %s - %s" % (error.__class__.__name__, str(error)))
+    def _check_input_signal_size(self, msg: dict):
+        """
+            Prevent the user input value to be overflown
+        """
+        msg_name = list(msg.keys())[0]
+        comparing_signals = msg[msg_name]
+        for signal in self.data_base.db.get_message_by_name(msg_name).signals:
+            if int(comparing_signals[signal.name]) <= 2**(signal.length):
+                pass
+            else:
+                raise OverflowError("%s: %s. Consider another input value that can be represented with %s byte(s)" % 
+                                  (signal.name, comparing_signals[signal.name], signal.length))
+    
+    @staticmethod
+    def _error_handler( error):
+        logging.error(" Error occured: %s - %s" % (error.__class__.__name__, str(error)))
         
     def __del__(self):
         if getattr(self, 'stack', None):
             self.stack.stop()
         self.bus.shutdown()
+
+
+if __name__ == '__main__':
+    print(can.Message.__dict__)
+    pass

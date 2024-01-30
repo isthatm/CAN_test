@@ -1,25 +1,13 @@
 {
     "MOTOR_CMD":
-    [
-        {
-            "SIGNAL_NAME": "MOTOR_CMD_steer",
-            "VALUE": "0x8"
-        },
-        {
-            "SIGNAL_NAME": "MOTOR_CMD_drive",
-            "VALUE": "0x10"
-        }
-    ],
-
+    {
+        "MOTOR_CMD_steer": "0x8",
+        "MOTOR_CMD_drive": "0x10"
+    },
+    
     "MOTOR_STATUS":
-    [
-        {
-            "SIGNAL_NAME": "MOTOR_STATUS_wheel_error",
-            "VALUE": "0"
-        },
-        {
-            "SIGNAL_NAME": "MOTOR_STATUS_speed",
-            "VALUE": "159"
-        }
-    ]
+    {
+            "MOTOR_STATUS_wheel_error": "0",
+            "MOTOR_STATUS_speed": "159"
+    }
 }
