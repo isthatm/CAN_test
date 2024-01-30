@@ -5,13 +5,15 @@ from . import can_node, can_ops, db_handler, test_services
 
 
 def main():
-    db = db_handler.CAN_database("./Example.dbc")
-    msg_1 = can.Message(data=[0x28, 0x05, 0x98], arbitration_id=0x100, is_extended_id=False)
-    msg_2 = can.Message(data=[0x14, 0x06, 0x98], arbitration_id=0x101, is_extended_id=False)
-    msg_3 = can.Message(data=[3,3,3,3,3,3,3,3], arbitration_id=0x111, is_extended_id=False, check=True)
-    
     demo_bus1 = can.interface.Bus(channel='test', interface='virtual', is_fd=False)
     demo_bus2 = can.interface.Bus(channel='test', interface='virtual', is_fd=False)
+    
+    #================ START ================
+    db_path = "./Example.dbc"
+    available_services = test_services.TestServices
+    test_interface = test_services.TestImplementation(db_path)
+
+    test_interface.proceed_test(available_services.CHECK_DATA_FRAME)
     
     tasks = []
     Node1 = can_node.CAN_Node("MOTOR", db)
