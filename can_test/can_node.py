@@ -25,19 +25,20 @@ RECORDED_DATA_PATH = r"./can_test/data.json"
 
 
 class CAN_Node ():
-    def __init__(self, node_name: str, 
+    def __init__(self, 
                  data_base: CAN_database,
                  channel: str = 'test',
-                 interface: str = 'virtual'):
+                 interface: str = 'virtual',
+                 **kwargs):
         """
             Notes: `node` should be specified when implementing test 
                     using pure python-can. In such case each bus is 
                     considered a node.
         """
-        self.bus =  can.interface.Bus(channel=channel, interface=interface) 
+        self.bus = can.interface.Bus(channel=channel, interface=interface) 
         self.data_base = data_base
-        self.node_name = node_name
-        self.expected_msgs = self.data_base.list_receiving_msg(node_name)
+        self.kwargs = kwargs
+        self.expected_msgs = self.data_base.list_receiving_msg(self.kwargs["node_name"])
         # NOTE: Here the 'can_id's are scattered and small in numbers. Therfore,
         #       0xFF is explicitly set => filter the one message specified by 'can_id'.
         #       Nonetheless, 'can_mask' can be set such that a range of IDs can be filtered
@@ -71,11 +72,11 @@ class CAN_Node ():
         can_frame = self._pack_frame(msg_name)
         self.bus.send(can_frame)
      
-    def send_periodic(self, msg_name: str, 
+    def send_periodic(self, 
                       period: int, 
                       duration: int) -> List[can.CyclicSendTaskABC]:
         """ Sends periodic message on the bus - OSI LV1,2 """
-        can_frame = self._pack_frame(msg_name)
+        can_frame = self._pack_frame(self.kwargs["sending_msg_name"])
         task = self.bus.send_periodic(msgs=can_frame, period=period, duration=duration)
         assert isinstance(task, can.CyclicSendTaskABC)
         return task    
@@ -93,11 +94,10 @@ class CAN_Node ():
         msg = self.bus.recv(timeout=time_out)
         return msg
 
-    def check_data(self, 
-                   arriving_msg: can.Message, 
-                   expected_msg: dict) -> Union[can.Message, None]:
+    def check_data(self, arriving_msg: can.Message) -> Union[can.Message, None]:
         if arriving_msg != None:
             try:
+                expected_msg: dict = self.kwargs["expected_receiving_msg"]
                 expected_msg_name = list(expected_msg.keys())[0]
                 self._check_input_signal_size(expected_msg)
                 db_msg = self.data_base.db.get_message_by_frame_id(arriving_msg.arbitration_id)
@@ -106,9 +106,9 @@ class CAN_Node ():
                 return arriving_msg.data
             except AssertionError as error:
                 self._error_handler(error)
-                return None
+                raise AssertionError("The receiving data frame is not identical to the expected one.")
         else:
-            pass
+            return None
 
     def _pack_frame(self, msg_name: str) -> can.Message:
         """

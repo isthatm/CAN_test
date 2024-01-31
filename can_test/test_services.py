@@ -1,7 +1,9 @@
 import can
 import time
 import cantools
+import sys
 from enum import Enum
+import logging
 from . import can_node, can_ops, db_handler
 
 """
@@ -17,30 +19,67 @@ class TestServices(Enum):
 
 
 class TestImplementation:
-    def __init__(self, db_path) -> None:
+    def __init__(self, db_path, *args) -> None:
         self.db = db_handler.CAN_database(db_path)
         self.available_messages = [
             "MOTOR_CMD"
             "MOTOR_STATUS",
         ]
-        self.tests = {
-            TestServices.CHECK_DATA_FRAME: self._check_data_frame(),
-            TestServices.CHECK_DATA_LENGTH: self._check_data_length(),
-            TestServices.CHECK_DATA_FRAME: self._check_range()
+        self._args = [arg for arg in args]
+        # print(self._args)
+        self.actions = {
+            TestServices.CHECK_DATA_FRAME:  (self._check_data_frame, self._args),
+            TestServices.CHECK_DATA_LENGTH: (self._check_data_length, self._args),
+            TestServices.CHECK_RANGE:  (self._check_range, self._args)
         }
     
     def proceed_test(self, test: Enum):
-        implemented_test = self.tests.get(test)
-        implemented_test() 
+        action = self.actions.get(test)
+        if action:
+            selected_test, args = action
+            selected_test(*args) 
+        else:
+            raise ValueError("Unknown service: {}".format(test.name))
         
-    def _check_data_frame(self, node1_name, node2_name):
-        Node1 = can_node.CAN_Node(node1_name, self.db)
-        Node2 = can_node.CAN_Node(node2_name, self.db)
+    def _check_data_frame(self, node1: dict, node2: dict):
+        """
+            Required dict for this test:
+            {
+                node_name: "",
+                is_sender: "",
+                sending_msg_name: "",
+                expected_receiving_msg: ""
+            }
+        """
+        try:
+            # Store node objects into a dictionary with the keys determine whether if it's a sender or not
+            node_objs = {
+                int(node["is_sender"]): can_node.CAN_Node(self.db, **node) for node in [node1, node2]
+            }
+            sending_node = node_objs[True]
+            receiving_node = node_objs[False]
 
-    def _check_data_length(self):
+            if sending_node == receiving_node:
+                raise ValueError("There can only be one sending/receiving node.")
+
+            task = []
+            task.append(sending_node.send_periodic(period=1, duration=5))
+
+            while(True):
+                received_msg = receiving_node.receive(time_out=1.5)
+                if received_msg == None:
+                    print("Timeout: No message is detected on the bus")
+                    break
+                res = receiving_node.check_data(received_msg)
+                print(res)
+
+        except KeyError as e:
+            logging.error("Key {} is not defined by the dict of this test".format(e))
+
+    def _check_data_length(self, node1: dict, node2: dict):
         pass
 
-    def _check_range(self):
+    def _check_range(self, node1: dict, node2: dict):
         pass
 
     def _is_supported(self, msg_name):

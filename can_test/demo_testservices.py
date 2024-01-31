@@ -6,11 +6,12 @@ class Color(Enum):
     BLUE = 3
 
 class ColorPrinter:
-    def __init__(self):
+    def __init__(self, *args):
+        self._args = [arg for arg in args]
         self.color_actions = {
             Color.RED: (self.print_red, ()),
             Color.GREEN: (self.print_green, ("extra_argument",)),
-            Color.BLUE: (self.print_blue, (1, 2, 3)),
+            Color.BLUE: (self.print_blue, self._args)
         }
 
     def print_color(self, color_enum):
@@ -27,16 +28,16 @@ class ColorPrinter:
     def print_green(self, extra_argument):
         print(f"Printing in green color with extra argument: {extra_argument}")
 
-    def print_blue(self, arg1, arg2, arg3):
-        print(f"Printing in blue color with arguments: {arg1}, {arg2}, {arg3}")
+    def print_blue(self, arg1, arg2, arg3, arg4):
+        print(f"Printing in blue color with arguments: {arg1}, {arg2}, {arg3}, {arg4}")
 
     def print_unknown(self):
         print("Unknown color.")
 
 # Example usage:
-printer = ColorPrinter()
+printer = ColorPrinter(1,2,3,4)
 
 # Call the method with an enum value
-printer.print_color(Color.RED)
-printer.print_color(Color.GREEN)
+# printer.print_color(Color.RED)
+# printer.print_color(Color.GREEN)
 printer.print_color(Color.BLUE)
