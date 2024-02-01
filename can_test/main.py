@@ -1,7 +1,4 @@
-import can
-import time
-import cantools
-from . import can_node, can_ops, db_handler, test_services
+from . import services, test_interface
 
 
 def main():
@@ -26,11 +23,10 @@ def main():
         }
     }
 
-    kwargs = {"Node1": Node1, "Node2": Node2}
-    available_services = test_services.TestServices
-    test_interface = test_services.TestImplementation(db_path, Node1, Node2)
-    test_interface.proceed_test(available_services.CHECK_DATA_FRAME)
+    available_services = services.TestServices
+    test_obj = test_interface.TestInterface(db_path, Node1, Node2)
+    test_obj.proceed_test(available_services.CHECK_DATA_FRAME.value)
+
 
 if __name__ == '__main__':
     main()
-

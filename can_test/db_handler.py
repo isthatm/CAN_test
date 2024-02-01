@@ -26,7 +26,4 @@ class CAN_database:
 
                 
 if __name__ == '__main__':
-    DB = CAN_database("./Example.dbc")
-    node_msg = DB.list_sending_msg("MOTOR")
-    print(node_msg[0].frame_id)
-    # DB.list_receiving_msg("MOTOR")
+    pass

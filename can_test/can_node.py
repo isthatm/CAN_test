@@ -2,7 +2,6 @@ import can
 import json
 import isotp
 import logging
-import cantools.tester as tester
 
 from .db_handler import CAN_database
 from typing import List, Union
@@ -26,6 +25,7 @@ RECORDED_DATA_PATH = r"./can_test/data.json"
 
 class CAN_Node ():
     def __init__(self, 
+                
                  data_base: CAN_database,
                  channel: str = 'test',
                  interface: str = 'virtual',
@@ -97,18 +97,26 @@ class CAN_Node ():
     def check_data(self, arriving_msg: can.Message) -> Union[can.Message, None]:
         if arriving_msg != None:
             try:
-                expected_msg: dict = self.kwargs["expected_receiving_msg"]
-                expected_msg_name = list(expected_msg.keys())[0]
-                self._check_input_signal_size(expected_msg)
                 db_msg = self.data_base.db.get_message_by_frame_id(arriving_msg.arbitration_id)
-                expected_frame = db_msg.encode(expected_msg.get(expected_msg_name), scaling=False)
-                assert arriving_msg.data == expected_frame
-                return arriving_msg.data
+                expected_msg: dict = self.kwargs["expected_receiving_msg"]
+
+                self._check_input_signal_size(expected_msg)
+
+                expected_msg_name = list(expected_msg.keys())[0]
+                expected_signals: dict = expected_msg.get(expected_msg_name)
+
+                if all([isinstance(sig_val, int) for _, sig_val in expected_signals.items()]):
+                    expected_frame = db_msg.encode(expected_signals, scaling=False)
+                    assert arriving_msg.data == expected_frame
+                    return arriving_msg.data
+                else:
+                    raise ValueError("Signal values must be integers.")
+                
             except AssertionError as error:
                 self._error_handler(error)
                 raise AssertionError("The receiving data frame is not identical to the expected one.")
-        else:
-            return None
+            
+        return None
 
     def _pack_frame(self, msg_name: str) -> can.Message:
         """

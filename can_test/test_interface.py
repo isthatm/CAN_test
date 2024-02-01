@@ -1,10 +1,6 @@
-import can
-import time
-import cantools
 import sys
-from enum import Enum
 import logging
-from . import can_node, can_ops, db_handler
+from can_test import can_node, db_handler
 
 """
     main.py function or robot framework will only communicate with this interface
@@ -12,13 +8,11 @@ from . import can_node, can_ops, db_handler
           hard-coded in TestImplementation
 """
 
-class TestServices(Enum):
-    CHECK_DATA_FRAME = 1
-    CHECK_DATA_LENGTH = 2
-    CHECK_RANGE = 3
+def set_interface(db_path, *args):
+    return TestInterface(db_path, *args)
 
 
-class TestImplementation:
+class TestInterface:
     def __init__(self, db_path, *args) -> None:
         self.db = db_handler.CAN_database(db_path)
         self.available_messages = [
@@ -26,20 +20,19 @@ class TestImplementation:
             "MOTOR_STATUS",
         ]
         self._args = [arg for arg in args]
-        # print(self._args)
         self.actions = {
-            TestServices.CHECK_DATA_FRAME:  (self._check_data_frame, self._args),
-            TestServices.CHECK_DATA_LENGTH: (self._check_data_length, self._args),
-            TestServices.CHECK_RANGE:  (self._check_range, self._args)
+            1:  (self._check_data_frame, self._args),
+            2:  (self._check_data_length, self._args),
+            3:  (self._check_range, self._args)
         }
     
-    def proceed_test(self, test: Enum):
+    def proceed_test(self, test):
         action = self.actions.get(test)
         if action:
             selected_test, args = action
             selected_test(*args) 
         else:
-            raise ValueError("Unknown service: {}".format(test.name))
+            raise AttributeError("Unknown service: {} ----- {}")
         
     def _check_data_frame(self, node1: dict, node2: dict):
         """
@@ -52,7 +45,7 @@ class TestImplementation:
             }
         """
         try:
-            # Store node objects into a dictionary with the keys determine whether if it's a sender or not
+        # Store node objects into a dictionary with the keys determine whether if it's a sender or not
             node_objs = {
                 int(node["is_sender"]): can_node.CAN_Node(self.db, **node) for node in [node1, node2]
             }
@@ -74,6 +67,7 @@ class TestImplementation:
                 print(res)
 
         except KeyError as e:
+            logging.error(e)
             logging.error("Key {} is not defined by the dict of this test".format(e))
 
     def _check_data_length(self, node1: dict, node2: dict):
