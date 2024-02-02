@@ -3,6 +3,7 @@
 """
 
 from enum import Enum
+import copy
 
 
 class TestServices(Enum):
@@ -13,10 +14,10 @@ class TestServices(Enum):
 
 class services:
     def check_data_frame(self):
-        return TestServices.CHECK_DATA_FRAME.value
+        return copy.copy(TestServices.CHECK_DATA_FRAME)
     
     def check_data_length(self):
-        return TestServices.CHECK_DATA_LENGTH.value
+        return copy.deepcopy(TestServices.CHECK_DATA_LENGTH)
     
     def check_range(self):
-        return TestServices.CHECK_RANGE.value
+        return copy.deepcopy(TestServices.CHECK_RANGE)

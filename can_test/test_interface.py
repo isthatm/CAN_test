@@ -1,6 +1,6 @@
 import sys
-import logging
-from can_test import can_node, db_handler
+
+from can_test import can_node, db_handler, services
 
 """
     main.py function or robot framework will only communicate with this interface
@@ -25,17 +25,21 @@ class TestInterface:
             2:  (self._check_data_length, self._args),
             3:  (self._check_range, self._args)
         }
-    
-    def proceed_test(self, test):
-        action = self.actions.get(test)
+        
+    def proceed_test(self, test: services.TestServices):
+        action = self.actions[test.value]
         if action:
             selected_test, args = action
             selected_test(*args) 
         else:
-            raise AttributeError("Unknown service: {} ----- {}")
+            raise KeyError("Unknown service: {}".format(test))
         
     def _check_data_frame(self, node1: dict, node2: dict):
         """
+            This test validates the sent/received data frame abiding by the following criteria:
+                +) The frame is available in database
+                +) The signal values are within the number of bytes designated
+                +) The received frame is identical to the sent one  
             Required dict for this test:
             {
                 node_name: "",
@@ -44,8 +48,11 @@ class TestInterface:
                 expected_receiving_msg: ""
             }
         """
+
+        DEFAULT_TEST_PERIOD = 1
+        DEFAULT_TEST_DURATION = 5
+
         try:
-        # Store node objects into a dictionary with the keys determine whether if it's a sender or not
             node_objs = {
                 int(node["is_sender"]): can_node.CAN_Node(self.db, **node) for node in [node1, node2]
             }
@@ -55,29 +62,27 @@ class TestInterface:
             if sending_node == receiving_node:
                 raise ValueError("There can only be one sending/receiving node.")
 
-            task = []
-            task.append(sending_node.send_periodic(period=1, duration=5))
+            rx_buffer = []
+            sending_node.send_periodic(period=DEFAULT_TEST_PERIOD, duration=DEFAULT_TEST_DURATION)
 
             while(True):
-                received_msg = receiving_node.receive(time_out=1.5)
+                received_msg = receiving_node.receive(time_out=1)
+                
                 if received_msg == None:
-                    print("Timeout: No message is detected on the bus")
-                    break
+                    if(len(rx_buffer) < (DEFAULT_TEST_DURATION // DEFAULT_TEST_PERIOD) + 1):
+                        raise TimeoutError("No message is detected on the bus.")
+                    else:
+                        break
+                
+                rx_buffer.append(received_msg)
                 res = receiving_node.check_data(received_msg)
                 print(res)
 
         except KeyError as e:
-            logging.error(e)
-            logging.error("Key {} is not defined by the dict of this test".format(e))
+            raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
-    def _check_data_length(self, node1: dict, node2: dict):
+    def _check_data_length(self, node1: dict):
         pass
 
     def _check_range(self, node1: dict, node2: dict):
         pass
-
-    def _is_supported(self, msg_name):
-        if msg_name in self.available_messages:
-            pass
-        else:
-            raise ValueError("Message - {}: is currently not supported")

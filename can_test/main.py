@@ -25,7 +25,7 @@ def main():
 
     available_services = services.TestServices
     test_obj = test_interface.TestInterface(db_path, Node1, Node2)
-    test_obj.proceed_test(available_services.CHECK_DATA_FRAME.value)
+    test_obj.proceed_test(available_services.CHECK_DATA_FRAME)
 
 
 if __name__ == '__main__':

@@ -86,10 +86,12 @@ class CAN_Node ():
         received_msg = self.stack.recv()
         return received_msg   
 
-    def receive(self, time_out) -> can.Message:
+    def receive(self, time_out=1) -> Union[can.Message, None]:
         """
             Read CAN frames that sent on the bus. Returns a can.Message or 
             None on timeout - OSI LV1,2
+            : param time_out: seconds to wait for a message, the default value is 1
+            : returns:  a can.Message on successful receipt or None if no message is recorded
         """
         msg = self.bus.recv(timeout=time_out)
         return msg

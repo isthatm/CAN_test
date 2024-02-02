@@ -11,4 +11,4 @@ Initialize Interface
 
 Run Test
     [Arguments]    ${SERVICE_OBJECT}    ${SERVICE_ENUM}     
-    Call Method    ${SERVICE_OBJECT}    proceed_test    ${SERVICE_ENUM}    
+    Call Method    ${SERVICE_OBJECT}    proceed_test    test=${SERVICE_ENUM}    
