@@ -10,6 +10,7 @@ ${TEST_OBJ}
 
 *** Test Cases ***
 Data Frame Test
+    [Tags]    Normal CAN Test
     Set Test Variable    &{TEST_CASE_NODE_1}    node_name=MOTOR    is_sender=${True}    sending_msg_name=MOTOR_STATUS    expected_receiving_msg=None   
 
     Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_STATUS_wheel_error=${0}    MOTOR_STATUS_speed=${159}    
@@ -20,7 +21,6 @@ Data Frame Test
     ${TEST_NAME}    Check Data Frame
     ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
     Run Test    ${TEST_OBJ}    ${TEST_NAME}
-
     
     
     

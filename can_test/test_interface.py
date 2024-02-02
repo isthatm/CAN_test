@@ -22,7 +22,7 @@ class TestInterface:
         self._args = [arg for arg in args]
         self.actions = {
             1:  (self._check_data_frame, self._args),
-            2:  (self._check_data_length, self._args),
+            2:  (self._check_service_0x22, self._args),
             3:  (self._check_range, self._args)
         }
         
@@ -66,7 +66,7 @@ class TestInterface:
             sending_node.send_periodic(period=DEFAULT_TEST_PERIOD, duration=DEFAULT_TEST_DURATION)
 
             while(True):
-                received_msg = receiving_node.receive(time_out=1)
+                received_msg = receiving_node.receive(time_out=1.5)
                 
                 if received_msg == None:
                     if(len(rx_buffer) < (DEFAULT_TEST_DURATION // DEFAULT_TEST_PERIOD) + 1):
@@ -81,7 +81,7 @@ class TestInterface:
         except KeyError as e:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
-    def _check_data_length(self, node1: dict):
+    def _check_service_0x22(self, node1: dict):
         pass
 
     def _check_range(self, node1: dict, node2: dict):

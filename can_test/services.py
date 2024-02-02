@@ -8,7 +8,7 @@ import copy
 
 class TestServices(Enum):
     CHECK_DATA_FRAME = 1
-    CHECK_DATA_LENGTH = 2
+    CHECK_SERVICE_0x22 = 2
     CHECK_RANGE = 3
 
 

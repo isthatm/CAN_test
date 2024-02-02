@@ -1,7 +1,8 @@
 import can
-import json
 import isotp
+import udsoncan
 import logging
+import json
 
 from .db_handler import CAN_database
 from typing import List, Union
@@ -9,15 +10,8 @@ from typing import List, Union
 
 """
     TODO:
-        +) Apply iso-tp 
-        +) Refactor data.json to follow:
-            {
-                message_name: {
-                    signal_1: value
-                    signal_2:
-                }
-            }
-        +) Define which session each node supports
+        +) Apply iso-tp to UDS
+        +) Define which session each node supports (probably by adding IDs to the filter?)
 """
 
 RECORDED_DATA_PATH = r"./can_test/data.json"
@@ -25,7 +19,6 @@ RECORDED_DATA_PATH = r"./can_test/data.json"
 
 class CAN_Node ():
     def __init__(self, 
-                
                  data_base: CAN_database,
                  channel: str = 'test',
                  interface: str = 'virtual',
@@ -35,6 +28,7 @@ class CAN_Node ():
                     using pure python-can. In such case each bus is 
                     considered a node.
         """
+        # Initialize DATA LINK LAYER
         self.bus = can.interface.Bus(channel=channel, interface=interface) 
         self.data_base = data_base
         self.kwargs = kwargs
@@ -51,6 +45,7 @@ class CAN_Node ():
                    send_id,
                    recv_id, 
                    addr_mode: isotp.AddressingMode = isotp.AddressingMode.Normal_11bits):
+        """ Initialize Transport and Network layers """
         if (addr_mode not in [ isotp.AddressingMode.Normal_11bits,
                                isotp.AddressingMode.Normal_29bits]):
             self._error_handler(
