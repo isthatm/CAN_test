@@ -1,5 +1,5 @@
 *** Settings ***
-Library   ./can_test/services.py   
+Library   ./can_test/test_services.py   
 Resource    test_keywords.robot
 
 

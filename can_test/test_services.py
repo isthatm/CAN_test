@@ -12,7 +12,7 @@ class TestServices(Enum):
     CHECK_RANGE = 3
 
 
-class services:
+class test_services:
     def check_data_frame(self):
         return copy.copy(TestServices.CHECK_DATA_FRAME)
     

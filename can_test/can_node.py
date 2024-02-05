@@ -1,8 +1,13 @@
 import can
 import isotp
-import udsoncan
 import logging
 import json
+from threading import Thread
+
+import udsoncan.connections as connections
+import udsoncan.configs
+from udsoncan.client import Client
+from udsoncan import Request, Response
 
 from .db_handler import CAN_database
 from typing import List, Union
@@ -10,14 +15,15 @@ from typing import List, Union
 
 """
     TODO:
-        +) Apply iso-tp to UDS
-        +) Define which session each node supports (probably by adding IDs to the filter?)
+        +) Define which session each node supports 
+        +) IDs that a node support can be added to filters
+
 """
 
 RECORDED_DATA_PATH = r"./can_test/data.json"
 
 
-class CAN_Node ():
+class CAN_Node:
     def __init__(self, 
                  data_base: CAN_database,
                  channel: str = 'test',
@@ -42,9 +48,9 @@ class CAN_Node ():
         self.bus.set_filters(self.expected_id)
     
     def init_isotp(self,
-                   send_id,
-                   recv_id, 
-                   addr_mode: isotp.AddressingMode = isotp.AddressingMode.Normal_11bits):
+                   send_id: int,
+                   recv_id: int, 
+                   addr_mode: isotp.AddressingMode = isotp.AddressingMode.Normal_11bits) -> isotp.CanStack:
         """ Initialize Transport and Network layers """
         if (addr_mode not in [ isotp.AddressingMode.Normal_11bits,
                                isotp.AddressingMode.Normal_29bits]):
@@ -55,8 +61,7 @@ class CAN_Node ():
         else:
             self.stack = isotp.CanStack(bus=self.bus, 
                                         address=isotp.Address(addr_mode, txid=send_id, rxid=recv_id),
-                                        error_handler=self._error_handler())
-            self.stack.start()
+                                        error_handler=self._error_handler)
         
     def send_isotp_msg(self, msg):
         """ Send a can message through CAN-TP layer - OSI LV3,4 """
@@ -74,8 +79,23 @@ class CAN_Node ():
         can_frame = self._pack_frame(self.kwargs["sending_msg_name"])
         task = self.bus.send_periodic(msgs=can_frame, period=period, duration=duration)
         assert isinstance(task, can.CyclicSendTaskABC)
-        return task    
-    
+        return task   
+
+    def send_diag_request(self, request: Request):
+        if not getattr(self ,'stack', False):
+            raise RuntimeError("The network layer - CANTp has not been initialized")
+        
+        connection = connections.PythonIsoTpConnection(self.stack)
+        thread = Thread(target=self._run_diag_request_sender, args=(connection, request))
+        thread.start()
+
+    def _run_diag_request_sender(self, conn: connections, request: Request):
+        uds_config = udsoncan.configs.default_client_config.copy()
+        uds_config["p2_timeout"] = 3 
+
+        with Client(conn, uds_config) as client:
+            self.diag_response = client.send_request(request)
+ 
     def receive_data_frame(self):
         """ Get a can message from CAN-TP layer - OSI LV3,4 """
         received_msg = self.stack.recv()
@@ -159,12 +179,10 @@ class CAN_Node ():
                                   (signal.name, comparing_signals[signal.name], signal.length))
     
     @staticmethod
-    def _error_handler( error):
+    def _error_handler(error):
         logging.error(" Error occured: %s - %s" % (error.__class__.__name__, str(error)))
         
     def __del__(self):
-        if getattr(self, 'stack', None):
-            self.stack.stop()
         self.bus.shutdown()
 
 

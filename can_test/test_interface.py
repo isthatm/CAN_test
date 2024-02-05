@@ -1,6 +1,6 @@
 import sys
 
-from can_test import can_node, db_handler, services
+from can_test import can_node, db_handler, test_services
 
 """
     main.py function or robot framework will only communicate with this interface
@@ -26,7 +26,7 @@ class TestInterface:
             3:  (self._check_range, self._args)
         }
         
-    def proceed_test(self, test: services.TestServices):
+    def proceed_test(self, test: test_services.TestServices):
         action = self.actions[test.value]
         if action:
             selected_test, args = action
