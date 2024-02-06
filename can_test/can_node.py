@@ -96,12 +96,12 @@ class CAN_Node:
         with Client(conn, uds_config) as client:
             self.diag_response = client.send_request(request)
  
-    def receive_data_frame(self):
+    def receive_isotp_msg(self, timeout):
         """ Get a can message from CAN-TP layer - OSI LV3,4 """
-        received_msg = self.stack.recv()
+        received_msg = self.stack.recv(block=True, timeout=timeout, )
         return received_msg   
 
-    def receive(self, time_out=1) -> Union[can.Message, None]:
+    def receive(self, time_out: int=1) -> Union[can.Message, None]:
         """
             Read CAN frames that sent on the bus. Returns a can.Message or 
             None on timeout - OSI LV1,2
@@ -183,6 +183,8 @@ class CAN_Node:
         logging.error(" Error occured: %s - %s" % (error.__class__.__name__, str(error)))
         
     def __del__(self):
+        if hasattr(self, 'stack'):
+            self.stack.stop()
         self.bus.shutdown()
 
 

@@ -48,7 +48,6 @@ class TestInterface:
                 expected_receiving_msg: ""
             }
         """
-
         DEFAULT_TEST_PERIOD = 1
         DEFAULT_TEST_DURATION = 5
 
