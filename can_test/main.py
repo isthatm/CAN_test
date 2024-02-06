@@ -17,7 +17,7 @@ from udsoncan import Response
 
 
 
-def main():
+def data_frame_test():
     db_path = "./Example.dbc"
     
     Node1 = {
@@ -43,7 +43,9 @@ def main():
     test_obj = test_interface.TestInterface(db_path, Node1, Node2)
     test_obj.proceed_test(available_services.CHECK_DATA_FRAME)
 
-def uds_demo():
+def uds_test():
+    TX_ID = 0x02
+    RX_ID = 0x05
     kwargs1 = {"node_name": "TESTER"}
     kwargs2 = {"node_name": "SERVER"}
 
@@ -57,19 +59,23 @@ def uds_demo():
     
     req = ECUReset.make_request(reset_type=1)
     Node1.send_diag_request(req)
+    data=[0x51, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x51, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                   ]
     while True:
         recv_msg = Node2.receive_isotp_msg(timeout=3)
         # recv_msg = Node2.receive(time_out=5)
-        if recv_msg == None and not Node1.stack.transmitting():
+        # print("Main thread", recv_msg, "is_transmitting", Node1.stack.transmitting())
+        if recv_msg == None:
             break
         else:
-            data=[0x71, 0x01]
+            print("Sent!")
             Node2.send_isotp_msg(data)
-        print("Main thread", recv_msg)
-    if hasattr(Node1, 'diag_response'):
-        print(Node1.diag_response.data)
+            
+    # if hasattr(Node1, 'diag_response'):
+    #     print(Node1.diag_response.data)
 
 
 if __name__ == '__main__':
     # main()
-    uds_demo()
+    uds_test()

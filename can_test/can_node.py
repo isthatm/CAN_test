@@ -24,6 +24,13 @@ RECORDED_DATA_PATH = r"./can_test/data.json"
 
 
 class CAN_Node:
+
+    # NOTE: Here the 'can_id's are scattered and small in numbers. Therfore,
+    #       0xFF is explicitly set => filter the one message specified by 'can_id'.
+    #       Nonetheless, 'can_mask' can be set such that a range of IDs can be filtered
+    
+    MASKING_BITS = 0xFF
+
     def __init__(self, 
                  data_base: CAN_database,
                  channel: str = 'test',
@@ -39,13 +46,10 @@ class CAN_Node:
         self.data_base = data_base
         self.kwargs = kwargs
         self.expected_msgs = self.data_base.list_receiving_msg(self.kwargs["node_name"])
-        # NOTE: Here the 'can_id's are scattered and small in numbers. Therfore,
-        #       0xFF is explicitly set => filter the one message specified by 'can_id'.
-        #       Nonetheless, 'can_mask' can be set such that a range of IDs can be filtered
-        self.expected_id = list(
-            map(lambda id: {'can_id': id.frame_id, 'can_mask': 0xFF}, self.expected_msgs)
-                                )
-        self.bus.set_filters(self.expected_id)
+        self.masked_ids = list(
+            map(lambda msgs: {'can_id': msgs.frame_id, 'can_mask': self.MASKING_BITS}, self.expected_msgs)
+        )
+        self.bus.set_filters(self.masked_ids)
     
     def init_isotp(self,
                    send_id: int,
@@ -72,9 +76,7 @@ class CAN_Node:
         can_frame = self._pack_frame(msg_name)
         self.bus.send(can_frame)
      
-    def send_periodic(self, 
-                      period: int, 
-                      duration: int) -> List[can.CyclicSendTaskABC]:
+    def send_periodic(self, period: int, duration: int) -> List[can.CyclicSendTaskABC]:
         """ Sends periodic message on the bus - OSI LV1,2 """
         can_frame = self._pack_frame(self.kwargs["sending_msg_name"])
         task = self.bus.send_periodic(msgs=can_frame, period=period, duration=duration)
@@ -82,24 +84,30 @@ class CAN_Node:
         return task   
 
     def send_diag_request(self, request: Request):
-        if not getattr(self ,'stack', False):
-            raise RuntimeError("The network layer - CANTp has not been initialized")
-        
+        self._check_stack_availability()
         connection = connections.PythonIsoTpConnection(self.stack)
         thread = Thread(target=self._run_diag_request_sender, args=(connection, request))
         thread.start()
 
     def _run_diag_request_sender(self, conn: connections, request: Request):
         uds_config = udsoncan.configs.default_client_config.copy()
-        uds_config["p2_timeout"] = 3 
+        uds_config["p2_timeout"] = 3
 
         with Client(conn, uds_config) as client:
-            self.diag_response = client.send_request(request)
- 
-    def receive_isotp_msg(self, timeout):
-        """ Get a can message from CAN-TP layer - OSI LV3,4 """
-        received_msg = self.stack.recv(block=True, timeout=timeout, )
-        return received_msg   
+            self.diag_resp: Request  = client.send_request(request)
+            interpreted_resp = request.service.interpret_response(self.diag_resp)
+            print(interpreted_resp.service_data)
+    
+    def send_diag_response(self):
+        self._check_stack_availability()
+        self.stack.start()
+        
+        while True:
+            recv_msg = self.receive_isotp_msg(timeout=3)
+            if recv_msg == None:
+                break
+            else:
+                self.send_isotp_msg()
 
     def receive(self, time_out: int=1) -> Union[can.Message, None]:
         """
@@ -110,6 +118,11 @@ class CAN_Node:
         """
         msg = self.bus.recv(timeout=time_out)
         return msg
+    
+    def receive_isotp_msg(self, timeout):
+        """ Get a can message from CAN-TP layer - OSI LV3,4 """
+        received_msg = self.stack.recv(block=True, timeout=timeout)
+        return received_msg   
 
     def check_data(self, arriving_msg: can.Message) -> Union[can.Message, None]:
         if arriving_msg != None:
@@ -132,7 +145,6 @@ class CAN_Node:
             except AssertionError as error:
                 self._error_handler(error)
                 raise AssertionError("The receiving data frame is not identical to the expected one.")
-            
         return None
 
     def _pack_frame(self, msg_name: str) -> can.Message:
@@ -178,6 +190,10 @@ class CAN_Node:
                 raise OverflowError("%s: %s. Consider another input value that can be represented with %s byte(s)" % 
                                   (signal.name, comparing_signals[signal.name], signal.length))
     
+    def _check_stack_availability(self):
+        if not getattr(self ,'stack', False):
+            raise RuntimeError("The network layer - CANTp has not been initialized")
+
     @staticmethod
     def _error_handler(error):
         logging.error(" Error occured: %s - %s" % (error.__class__.__name__, str(error)))

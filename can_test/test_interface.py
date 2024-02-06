@@ -64,10 +64,11 @@ class TestInterface:
             rx_buffer = []
             sending_node.send_periodic(period=DEFAULT_TEST_PERIOD, duration=DEFAULT_TEST_DURATION)
 
-            while(True):
+            while(True): 
                 received_msg = receiving_node.receive(time_out=1.5)
                 
                 if received_msg == None:
+                    #TODO: raise TimeoutError based on actual time
                     if(len(rx_buffer) < (DEFAULT_TEST_DURATION // DEFAULT_TEST_PERIOD) + 1):
                         raise TimeoutError("No message is detected on the bus.")
                     else:
@@ -80,7 +81,7 @@ class TestInterface:
         except KeyError as e:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
-    def _check_service_0x22(self, node1: dict):
+    def _check_service_0x22(self, tester: dict, server: dict):
         pass
 
     def _check_range(self, node1: dict, node2: dict):

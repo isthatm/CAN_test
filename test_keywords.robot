@@ -1,6 +1,6 @@
 *** Settings ***
 Library    OperatingSystem
-Library    can_test.test_interface
+Library    ./can_test/test_interface.py
 
 
 *** Keywords ***
