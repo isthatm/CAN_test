@@ -55,25 +55,13 @@ def uds_test():
 
     Node1.init_isotp(recv_id=0x121, send_id=0x120)
     Node2.init_isotp(recv_id=0x120, send_id=0x121)
-    Node2.stack.start()
     
-    req = ECUReset.make_request(reset_type=1)
+    req = ECUReset.make_request(reset_type=4)
     Node1.send_diag_request(req)
     data=[0x51, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x51, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                    ]
-    while True:
-        recv_msg = Node2.receive_isotp_msg(timeout=3)
-        # recv_msg = Node2.receive(time_out=5)
-        # print("Main thread", recv_msg, "is_transmitting", Node1.stack.transmitting())
-        if recv_msg == None:
-            break
-        else:
-            print("Sent!")
-            Node2.send_isotp_msg(data)
-            
-    # if hasattr(Node1, 'diag_response'):
-    #     print(Node1.diag_response.data)
+    Node2.get_diag_request()
 
 
 if __name__ == '__main__':

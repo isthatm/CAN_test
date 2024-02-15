@@ -16,8 +16,8 @@ class test_services:
     def check_data_frame(self):
         return copy.copy(TestServices.CHECK_DATA_FRAME)
     
-    def check_data_length(self):
-        return copy.deepcopy(TestServices.CHECK_DATA_LENGTH)
+    def check_service_0x22(self):
+        return copy.deepcopy(TestServices.CHECK_SERVICE_0x22)
     
     def check_range(self):
         return copy.deepcopy(TestServices.CHECK_RANGE)

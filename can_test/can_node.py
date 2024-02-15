@@ -5,11 +5,14 @@ import json
 from threading import Thread
 
 import udsoncan.connections as connections
+import udsoncan.services
 import udsoncan.configs
+from udsoncan.BaseService import BaseService
 from udsoncan.client import Client
 from udsoncan import Request, Response
 
 from .db_handler import CAN_database
+from .UDS_data import SupportedServices
 from typing import List, Union
 
 
@@ -84,6 +87,8 @@ class CAN_Node:
         return task   
 
     def send_diag_request(self, request: Request):
+        # TODO: return response from the thread 
+        """ Used by the client """
         self._check_stack_availability()
         connection = connections.PythonIsoTpConnection(self.stack)
         thread = Thread(target=self._run_diag_request_sender, args=(connection, request))
@@ -94,20 +99,31 @@ class CAN_Node:
         uds_config["p2_timeout"] = 3
 
         with Client(conn, uds_config) as client:
-            self.diag_resp: Request  = client.send_request(request)
-            interpreted_resp = request.service.interpret_response(self.diag_resp)
-            print(interpreted_resp.service_data)
+            diag_resp: Response = client.send_request(request)
+            interpreted_resp = request.service.interpret_response(diag_resp)
+            print("CLIENT's interpreted response: %s" % interpreted_resp)
     
-    def send_diag_response(self):
+    def get_diag_request(self):
+        """
+            Used by the server
+            Check the whether the server has received the request, if it did, then send the response immediately 
+        """
         self._check_stack_availability()
         self.stack.start()
-        
+
         while True:
             recv_msg = self.receive_isotp_msg(timeout=3)
-            if recv_msg == None:
+            if recv_msg == None: 
                 break
             else:
-                self.send_isotp_msg()
+                print("SERVER receives: %s" % recv_msg)
+                byte_service = recv_msg[0:1]
+                # The byte order may vary on different of machines
+                requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'little'))
+                resp_code, resp_data = SupportedServices.service_resp(requested_service)
+                resp = Response(service=requested_service, code=resp_code, data=bytes(resp_data))
+                payload = resp.get_payload()
+                self.send_isotp_msg(payload)
 
     def receive(self, time_out: int=1) -> Union[can.Message, None]:
         """
