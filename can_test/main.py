@@ -42,26 +42,24 @@ def data_frame_test(available_services: test_services.TestServices):
     test_obj = test_interface.TestInterface(DB_PATH, Node1, Node2)
     test_obj.proceed_test(available_services.CHECK_DATA_FRAME)
 
-def uds_test_ECUReset(available_services):
-    TX_ID = 0x02
-    RX_ID = 0x05
-    kwargs1 = {"node_name": "TESTER"}
-    kwargs2 = {"node_name": "SERVER"}
-    
-    db = db_handler.CAN_database("./Example.dbc")
-    Node1 = can_node.CAN_Node(db, **kwargs1)
-    Node2 = can_node.CAN_Node(db, **kwargs2)
+def uds_test_ECUReset(available_services: test_services.TestServices):
+    tester = {
+        "node_name": "TESTER",
+        "TX_ID": 0x02,
+        "RX_ID": 0x05,
+        "sub_function": 3
+        }
+    server = {
+        "node_name": "SERVER",
+        "TX_ID": 0x05,
+        "RX_ID": 0x02,
+        }
 
-    Node1.init_isotp(recv_id=RX_ID, send_id=TX_ID)
-    Node2.init_isotp(recv_id=TX_ID, send_id=RX_ID)
-    
-    req = ECUReset.make_request(reset_type=4)
-
-    Node1.send_diag_request(req)
-    Node2.get_diag_request()
+    test_obj = test_interface.TestInterface(DB_PATH, tester, server)
+    test_obj.proceed_test(available_services.CHECK_SERVICE_ECU_RESET)
 
 
 if __name__ == '__main__':
     services = test_services.TestServices
-    # data_frame_test(services)
+    data_frame_test(services)
     uds_test_ECUReset(services)

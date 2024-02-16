@@ -1,5 +1,6 @@
 import sys
 
+from udsoncan.services import *
 from can_test import can_node, db_handler, test_services
 
 """
@@ -82,7 +83,16 @@ class TestInterface:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
     def _check_service_ECUReset(self, tester: dict, server: dict):
-        pass
+        tester_node = can_node.CAN_Node(self.db, **tester)
+        server_node = can_node.CAN_Node(self.db, **server)
+
+        tester_node.init_isotp(recv_id=tester['RX_ID'], send_id=tester['TX_ID'])
+        server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
+        
+        req = ECUReset.make_request(reset_type=tester['sub_function'])
+
+        tester_node.send_diag_request(req)
+        server_node.get_diag_request()
 
     def _check_range(self, node1: dict, node2: dict):
         pass
