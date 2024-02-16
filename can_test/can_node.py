@@ -12,7 +12,7 @@ from udsoncan.client import Client
 from udsoncan import Request, Response
 
 from .db_handler import CAN_database
-from .UDS_data import SupportedServices
+from .uds_data import SupportedServices
 from typing import List, Union
 
 
@@ -120,7 +120,7 @@ class CAN_Node:
                 byte_service = recv_msg[0:1]
                 # The byte order may vary on different of machines
                 requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'little'))
-                resp_code, resp_data = SupportedServices.service_resp(requested_service)
+                resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)
                 resp = Response(service=requested_service, code=resp_code, data=bytes(resp_data))
                 payload = resp.get_payload()
                 self.send_isotp_msg(payload)

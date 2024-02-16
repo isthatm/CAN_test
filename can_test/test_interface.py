@@ -22,7 +22,7 @@ class TestInterface:
         self._args = [arg for arg in args]
         self.actions = {
             1:  (self._check_data_frame, self._args),
-            2:  (self._check_service_0x22, self._args),
+            2:  (self._check_service_ECUReset, self._args),
             3:  (self._check_range, self._args)
         }
         
@@ -81,7 +81,7 @@ class TestInterface:
         except KeyError as e:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
-    def _check_service_0x22(self, tester: dict, server: dict):
+    def _check_service_ECUReset(self, tester: dict, server: dict):
         pass
 
     def _check_range(self, node1: dict, node2: dict):
