@@ -1,6 +1,8 @@
 import sys
+from contextlib import contextmanager
 
 from udsoncan.services import *
+from udsoncan import Request
 from can_test import can_node, db_handler, test_services
 
 """
@@ -24,7 +26,7 @@ class TestInterface:
         self.actions = {
             1:  (self._check_data_frame, self._args),
             2:  (self._check_service_ECUReset, self._args),
-            3:  (self._check_range, self._args)
+            3:  (self._check_service_ReadDataByIdentifier, self._args)
         }
         
     def proceed_test(self, test: test_services.TestServices):
@@ -77,22 +79,33 @@ class TestInterface:
                 
                 rx_buffer.append(received_msg)
                 res = receiving_node.check_data(received_msg)
-                print(res)
+                print("Node {} receives: {}".format(node2['node_name'], res))
 
         except KeyError as e:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
 
     def _check_service_ECUReset(self, tester: dict, server: dict):
+        req = ECUReset.make_request(reset_type=tester['sub_function'])
+
+        with self.uds_mangager(tester, server, req) as manager:
+            pass
+
+    def _check_service_ReadDataByIdentifier(self, tester: dict, server: dict):
+        req = ReadDataByIdentifier.make_request(tester['did_list'])
+
+        with self.uds_mangager(tester, server, req) as manager:
+            pass
+    
+    @contextmanager
+    def uds_mangager(self, tester: dict, server: dict, request: Request):
+        # Setup
         tester_node = can_node.CAN_Node(self.db, **tester)
         server_node = can_node.CAN_Node(self.db, **server)
 
         tester_node.init_isotp(recv_id=tester['RX_ID'], send_id=tester['TX_ID'])
         server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
+        yield
         
-        req = ECUReset.make_request(reset_type=tester['sub_function'])
-
-        tester_node.send_diag_request(req)
+        # Teardown
+        tester_node.send_diag_request(request)
         server_node.get_diag_request()
-
-    def _check_range(self, node1: dict, node2: dict):
-        pass

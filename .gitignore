@@ -4,4 +4,4 @@ can_test/__pycache__
 *.html
 *.xml
 *.html
-
+*.log

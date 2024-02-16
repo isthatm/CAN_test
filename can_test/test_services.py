@@ -8,8 +8,8 @@ import copy
 
 class TestServices(Enum):
     CHECK_DATA_FRAME = 1
-    CHECK_SERVICE_ECU_RESET = 2
-    CHECK_RANGE = 3
+    CHECK_SERVICE_ECUReset = 2
+    CHECK_SERVICE_ReadDataByIdentifier = 3
 
 
 class test_services:
@@ -17,7 +17,7 @@ class test_services:
         return copy.copy(TestServices.CHECK_DATA_FRAME)
     
     def _check_service_ECUReset(self):
-        return copy.deepcopy(TestServices.CHECK_SERVICE_ECU_RESET)
+        return copy.copy(TestServices.CHECK_SERVICE_ECUReset)
     
     def check_range(self):
-        return copy.deepcopy(TestServices.CHECK_RANGE)
+        return copy.copy(TestServices.CHECK_SERVICE_ReadDataByIdentifier)

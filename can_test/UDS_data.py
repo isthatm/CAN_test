@@ -5,9 +5,12 @@
 from udsoncan import services
 from udsoncan.BaseService import BaseSubfunction
 from udsoncan.services import *
+from udsoncan.common.dids import DataIdentifier
 from udsoncan import Response, Request
 from typing import Union, Tuple
 import inspect
+
+#TODO: Error when the service is not supported by the defined session
 
 class SupportedServices:
     
@@ -32,11 +35,21 @@ class SupportedServices:
 
     @staticmethod
     def resp_DiagnosticSessionControl():
-        pass
+        P2_SERVER_MAX = 5 # timeout of the activated session  
+        P2_STAR_SERVER_MAX = 2 # Add two more seconds on receiving NRC 0x78  
     
     @staticmethod
-    def resp_ReadDataByIdentifier():
-        pass
+    def resp_ReadDataByIdentifier(recv_payload: bytearray) -> Tuple[Response.Code, bytearray]:
+        SUPPORTED_DIDS = {
+            DataIdentifier.VIN: [0x57, 0x30, 0x4C, 0x30, 
+                                 0x30, 0x30, 0x30, 0x34,
+                                 0x33, 0x4D, 0x42, 0x35, 
+                                 0x34, 0x31, 0x33, 0x32, 0x36],
+            DataIdentifier.ECUSerialNumber: [0x41, 0x42, 0x43, 0x44]
+        }
+
+        request = Request.from_payload(recv_payload)
+        
 
     @staticmethod
     def resp_ECUReset(recv_payload: bytearray) -> Tuple[Response.Code, bytearray]:
@@ -57,6 +70,7 @@ class SupportedServices:
         elif len(recv_payload) > REQUEST_EXPECTED_LENGTH:
             return (Response.Code.IncorrectMessageLengthOrInvalidFormat, bytearray())
         
+        # Positive response
         resp_data = [POWER_DOWN_TIME]
         return (Response.Code.PositiveResponse, bytearray(resp_data))
     
@@ -65,14 +79,9 @@ def add_list_sub_fun():
     BaseSubfunction.list_sub_fun = classmethod(list_sub_fun)
 
 def list_sub_fun(cls):
-    """ Filters class attributes excluding methods, private and protected ones """
+    """ Filters class attributes excluding private, protected attributes and methods"""
     sub_fun_list = []
     for member in inspect.getmembers(cls, lambda member: not (inspect.isroutine(member))):
         if not member[0].startswith('_'):
             sub_fun_list.append(member)
     return sub_fun_list
-
-
-    
-
-    

@@ -18,9 +18,7 @@ from typing import List, Union
 
 """
     TODO:
-        +) Define which session each node supports 
-        +) IDs that a node support can be added to filters
-
+        +) requires session as an argument when intitializing tester
 """
 
 RECORDED_DATA_PATH = r"./can_test/data.json"
@@ -87,8 +85,7 @@ class CAN_Node:
         return task   
 
     def send_diag_request(self, request: Request):
-        # TODO: return response from the thread 
-        """ Used by the client """
+        """ Used by the CLIENT """
         self._check_stack_availability()
         connection = connections.PythonIsoTpConnection(self.stack)
         thread = Thread(target=self._run_diag_request_sender, args=(connection, request))
@@ -96,6 +93,7 @@ class CAN_Node:
 
     def _run_diag_request_sender(self, conn: connections, request: Request):
         uds_config = udsoncan.configs.default_client_config.copy()
+        # The default timeout is 3s if session is not defined
         uds_config["p2_timeout"] = 3
 
         with Client(conn, uds_config) as client:
@@ -105,7 +103,7 @@ class CAN_Node:
     
     def get_diag_request(self):
         """
-            Used by the server
+            Used by the SERVER
             Check the whether the server has received the request, if it did, then send the response immediately 
         """
         self._check_stack_availability()
@@ -186,6 +184,7 @@ class CAN_Node:
 
         for signal_name, signal_value in signal_values[msg_name].items():
             data_formatter[signal_name] = int(signal_value, 10)
+
         encoded_data_frame = msg.encode(data_formatter, scaling=False)
         can_frame = can.Message(data=encoded_data_frame, 
                                 arbitration_id=msg.frame_id, 
@@ -222,4 +221,3 @@ class CAN_Node:
 
 if __name__ == '__main__':
     print(can.Message.__dict__)
-    pass
