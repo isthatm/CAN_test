@@ -68,7 +68,7 @@ def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices
         "node_name": "TESTER",
         "TX_ID": 0x02,
         "RX_ID": 0x05,
-        "did_list": [0xF190, 0xF18C]
+        "did_list": [0xF190]
         }
     server = {
         "node_name": "SERVER",
@@ -85,5 +85,5 @@ if __name__ == '__main__':
     services = test_services.TestServices
 
     # data_frame_test(services)
-    uds_test_ECUReset(services)
-    # uds_test_ReadDataByIdentifier(services)
+    # uds_test_ECUReset(services)
+    uds_test_ReadDataByIdentifier(services)

@@ -4,6 +4,7 @@ import logging
 import json
 from threading import Thread
 from queue import Queue
+import sys
 
 import udsoncan.connections as connections
 import udsoncan.services
@@ -116,8 +117,7 @@ class CAN_Node:
             else:
                 print("SERVER receives: %s" % recv_msg)
                 byte_service = recv_msg[0:1]
-                # The byte order may vary on different of machines
-                requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'little'))
+                requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'big'))
                 resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)
                 resp = Response(service=requested_service, code=resp_code, data=bytes(resp_data))
                 payload = resp.get_payload()

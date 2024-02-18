@@ -51,7 +51,8 @@ class SupportedServices:
 
         request = Request.from_payload(recv_payload)
         # TODO: check of the DIDs are supported by this node
-        return (Response.Code.PositiveResponse, bytearray(SUPPORTED_DIDS[DataIdentifier.VIN]))
+        did_bytes = DataIdentifier.VIN.to_bytes(2, byteorder='big')
+        return (Response.Code.PositiveResponse, did_bytes + bytearray( SUPPORTED_DIDS[DataIdentifier.VIN]))
         
 
     @staticmethod

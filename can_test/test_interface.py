@@ -108,12 +108,11 @@ class TestInterface:
         with self.uds_mangager(tester, server, req) as manager:
             resp = manager
             interpreted_resp = ReadDataByIdentifier.interpret_response(resp, tester["did_list"], did_codec)
-            print("CLIENT - interpreted response: %s" % interpreted_resp)
-            print("CLIENT - raw response: %s" % resp)
+            print("CLIENT - interpreted response: %s" % interpreted_resp.service_data.values)
+            print("CLIENT - raw response: %s" % resp.data)
     
     @contextmanager
     def uds_mangager(self, tester: dict, server: dict, request: Request):
-        # Setup
         resp_q = Queue(maxsize=1)
         tester_node = can_node.CAN_Node(self.db, **tester)
         server_node = can_node.CAN_Node(self.db, **server)
@@ -125,4 +124,3 @@ class TestInterface:
         server_node.get_diag_request()
         resp = resp_q.get()
         yield resp
-        # Teardown 
