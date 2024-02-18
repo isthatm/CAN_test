@@ -3,6 +3,7 @@ import isotp
 import logging
 import json
 from threading import Thread
+from queue import Queue
 
 import udsoncan.connections as connections
 import udsoncan.services
@@ -84,22 +85,21 @@ class CAN_Node:
         assert isinstance(task, can.CyclicSendTaskABC)
         return task   
 
-    def send_diag_request(self, request: Request):
+    def send_diag_request(self, request: Request, queue: Queue):
         """ Used by the CLIENT """
         self._check_stack_availability()
         connection = connections.PythonIsoTpConnection(self.stack)
-        thread = Thread(target=self._run_diag_request_sender, args=(connection, request))
+        thread = Thread(target=self._run_diag_request_sender, args=(connection, request, queue))
         thread.start()
 
-    def _run_diag_request_sender(self, conn: connections, request: Request):
+    def _run_diag_request_sender(self, conn: connections, request: Request, queue: Queue):
         uds_config = udsoncan.configs.default_client_config.copy()
         # The default timeout is 3s if session is not defined
         uds_config["p2_timeout"] = 3
 
         with Client(conn, uds_config) as client:
             diag_resp: Response = client.send_request(request)
-            interpreted_resp = request.service.interpret_response(diag_resp)
-            print("CLIENT's interpreted response: %s" % interpreted_resp)
+            queue.put(diag_resp)
     
     def get_diag_request(self):
         """

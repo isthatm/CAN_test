@@ -9,6 +9,7 @@ from udsoncan.common.dids import DataIdentifier
 from udsoncan import Response, Request
 from typing import Union, Tuple
 import inspect
+import sys
 
 #TODO: Error when the service is not supported by the defined session
 
@@ -49,6 +50,8 @@ class SupportedServices:
         }
 
         request = Request.from_payload(recv_payload)
+        # TODO: check of the DIDs are supported by this node
+        return (Response.Code.PositiveResponse, bytearray(SUPPORTED_DIDS[DataIdentifier.VIN]))
         
 
     @staticmethod
@@ -71,7 +74,7 @@ class SupportedServices:
             return (Response.Code.IncorrectMessageLengthOrInvalidFormat, bytearray())
         
         # Positive response
-        resp_data = [POWER_DOWN_TIME]
+        resp_data = [request.subfunction] + [POWER_DOWN_TIME]
         return (Response.Code.PositiveResponse, bytearray(resp_data))
     
 

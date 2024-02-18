@@ -1,6 +1,8 @@
 import sys
 from contextlib import contextmanager
+from queue import Queue
 
+import udsoncan
 from udsoncan.services import *
 from udsoncan import Request
 from can_test import can_node, db_handler, test_services
@@ -88,24 +90,39 @@ class TestInterface:
         req = ECUReset.make_request(reset_type=tester['sub_function'])
 
         with self.uds_mangager(tester, server, req) as manager:
-            pass
+            resp = manager
+            interpreted_resp = ECUReset.interpret_response(resp)
+            print("CLIENT - interpreted response: \
+                  \n\t1. ResetType: %s \
+                  \n\t2. PowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
+            print("CLIENT - raw response: %s" % resp.data)
 
     def _check_service_ReadDataByIdentifier(self, tester: dict, server: dict):
-        req = ReadDataByIdentifier.make_request(tester['did_list'])
+        # Definitions for DID values represented in `bytes` objects
+        did_codec = {
+            0xF190: udsoncan.AsciiCodec(17),
+            0xF18C: udsoncan.AsciiCodec(4)
+        }
+        req = ReadDataByIdentifier.make_request(didlist=tester["did_list"], didconfig=did_codec)
 
         with self.uds_mangager(tester, server, req) as manager:
-            pass
+            resp = manager
+            interpreted_resp = ReadDataByIdentifier.interpret_response(resp, tester["did_list"], did_codec)
+            print("CLIENT - interpreted response: %s" % interpreted_resp)
+            print("CLIENT - raw response: %s" % resp)
     
     @contextmanager
     def uds_mangager(self, tester: dict, server: dict, request: Request):
         # Setup
+        resp_q = Queue(maxsize=1)
         tester_node = can_node.CAN_Node(self.db, **tester)
         server_node = can_node.CAN_Node(self.db, **server)
 
         tester_node.init_isotp(recv_id=tester['RX_ID'], send_id=tester['TX_ID'])
         server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
-        yield
         
-        # Teardown
-        tester_node.send_diag_request(request)
+        tester_node.send_diag_request(request, resp_q) # Sends and receives response from a different thread
         server_node.get_diag_request()
+        resp = resp_q.get()
+        yield resp
+        # Teardown 
