@@ -68,7 +68,7 @@ def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices
         "node_name": "TESTER",
         "TX_ID": 0x02,
         "RX_ID": 0x05,
-        "did_list": [0xF190]
+        "did_list": [0xF190, 0xF18C, 0xF191]
         }
     server = {
         "node_name": "SERVER",
@@ -81,7 +81,7 @@ def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, filename="log.log", filemode='w')
+    logging.basicConfig(level=logging.DEBUG, filename="test_log.log", filemode='w')
     services = test_services.TestServices
 
     # data_frame_test(services)

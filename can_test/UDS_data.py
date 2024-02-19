@@ -9,6 +9,7 @@ from udsoncan.common.dids import DataIdentifier
 from udsoncan import Response, Request
 from typing import Union, Tuple
 import inspect
+import struct
 import sys
 
 #TODO: Error when the service is not supported by the defined session
@@ -50,11 +51,38 @@ class SupportedServices:
         }
 
         request = Request.from_payload(recv_payload)
-        # TODO: check of the DIDs are supported by this node
-        did_bytes = DataIdentifier.VIN.to_bytes(2, byteorder='big')
-        return (Response.Code.PositiveResponse, did_bytes + bytearray( SUPPORTED_DIDS[DataIdentifier.VIN]))
-        
+        offset, supported_did_flag = 0, 0
+        resp_data = bytearray()
 
+        while True:
+            if len(request.data) <= offset:
+                break
+
+            request_did_bytes = request.data[offset:offset + 2]
+            did = struct.unpack('>H', request_did_bytes)[0] 
+
+            is_supported_did = did in list(SUPPORTED_DIDS.keys())
+            if is_supported_did:
+                supported_did_flag += 1
+                resp_data.extend(
+                    request_did_bytes + bytearray(SUPPORTED_DIDS[did])
+                )
+            else:
+                supported_did_flag -= 1
+            offset += 2
+
+        # Supported NRC
+        if len(request.data) < 2 or len(request.data) % 2: # NRC 13: Minimum length and DID format check
+            return (Response.Code.IncorrectMessageLengthOrInvalidFormat, bytearray()) 
+        # Placeholder: NRC 33
+        if supported_did_flag < 0: # NRC 31: None of the requested DIDs are supported by this server 
+            return (Response.Code.RequestOutOfRange, bytearray())
+        if len(resp_data) > 4095: # NRC 14: Response to long
+            return (Response.Code.ResponseTooLong, bytearray())
+        
+        # Positive response
+        return (Response.Code.PositiveResponse, resp_data)
+        
     @staticmethod
     def resp_ECUReset(recv_payload: bytearray) -> Tuple[Response.Code, bytearray]:
         REQUEST_EXPECTED_LENGTH = 2 # bytes

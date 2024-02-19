@@ -1,6 +1,7 @@
 import sys
 from contextlib import contextmanager
 from queue import Queue
+import binascii
 
 import udsoncan
 from udsoncan.services import *
@@ -93,22 +94,27 @@ class TestInterface:
             resp = manager
             interpreted_resp = ECUReset.interpret_response(resp)
             print("CLIENT - interpreted response: \
-                  \n\t1. ResetType: %s \
-                  \n\t2. PowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
+                  \n\tResetType: %s \
+                  \n\tPowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
             print("CLIENT - raw response: %s" % resp.data)
 
     def _check_service_ReadDataByIdentifier(self, tester: dict, server: dict):
         # Definitions for DID values represented in `bytes` objects
         did_codec = {
             0xF190: udsoncan.AsciiCodec(17),
-            0xF18C: udsoncan.AsciiCodec(4)
+            0xF18C: udsoncan.AsciiCodec(4),
+            0xF191: ">H"
         }
         req = ReadDataByIdentifier.make_request(didlist=tester["did_list"], didconfig=did_codec)
 
         with self.uds_mangager(tester, server, req) as manager:
             resp = manager
             interpreted_resp = ReadDataByIdentifier.interpret_response(resp, tester["did_list"], did_codec)
-            print("CLIENT - interpreted response: %s" % interpreted_resp.service_data.values)
+            did_values = interpreted_resp.service_data.values
+            print("CLIENT - interpreted response:")
+            list(map(lambda did:
+                print("\t [%s]: %s" % (hex(did), did_values[did])), list(did_values.keys())
+            ))
             print("CLIENT - raw response: %s" % resp.data)
     
     @contextmanager
@@ -121,6 +127,7 @@ class TestInterface:
         server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
         
         tester_node.send_diag_request(request, resp_q) # Sends and receives response from a different thread
+
         server_node.get_diag_request()
         resp = resp_q.get()
         yield resp
