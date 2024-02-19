@@ -63,7 +63,7 @@ def uds_test_ECUReset(available_services: test_services.TestServices):
 
 def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices):
     print("\n========== UDS TEST - ReadDataByIdentifier ==========")
-
+    # didconfig is defined within test_interface
     tester = {
         "node_name": "TESTER",
         "TX_ID": 0x02,
@@ -84,6 +84,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, filename="test_log.log", filemode='w')
     services = test_services.TestServices
 
-    # data_frame_test(services)
-    # uds_test_ECUReset(services)
+    data_frame_test(services)
+    uds_test_ECUReset(services)
     uds_test_ReadDataByIdentifier(services)

@@ -98,7 +98,6 @@ class CAN_Node:
         uds_config = udsoncan.configs.default_client_config.copy()
         # The default timeout is 3s if session is not defined
         uds_config["p2_timeout"] = 3    
-        # raise ValueError("DEMOO")
 
         with Client(conn, uds_config) as client:
             diag_resp: Response = client.send_request(request)

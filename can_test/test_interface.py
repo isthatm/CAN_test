@@ -1,7 +1,11 @@
 import sys
 from contextlib import contextmanager
 from queue import Queue
-import binascii
+import threading
+import traceback
+import signal
+import os
+import logging
 
 import udsoncan
 from udsoncan.services import *
@@ -126,8 +130,29 @@ class TestInterface:
         tester_node.init_isotp(recv_id=tester['RX_ID'], send_id=tester['TX_ID'])
         server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
         
+        self.install_thread_exc_handler()
         tester_node.send_diag_request(request, resp_q) # Sends and receives response from a different thread
-
         server_node.get_diag_request()
         resp = resp_q.get()
+
         yield resp
+
+    @staticmethod
+    def install_thread_exc_handler():
+        sys.excepthook = sendKillSignal
+        threading.Thread.__init__ = patched_init
+
+def sendKillSignal(etype, value, tb):
+    traceback.print_exception(etype, value, tb)
+    os.kill(os.getpid(), signal.SIGTERM)
+
+original_init = threading.Thread.__init__
+def patched_init(self, *args, **kwargs):
+    original_init(self, *args, **kwargs)
+    original_run = self.run
+    def patched_run(*args, **kw):
+        try:
+            original_run(*args, **kw)
+        except:
+            sys.excepthook(*sys.exc_info())
+    self.run = patched_run
