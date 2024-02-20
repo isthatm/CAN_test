@@ -7,6 +7,7 @@ Resource    test_keywords.robot
 ${DB_PATH}    ./Example.dbc 
 ${TEST_OBJ}
 
+# Run by CLI: $python -m robot <path_to_robot>
 
 *** Test Cases ***
 Data Frame Test 1
@@ -21,8 +22,11 @@ Data Frame Test 1
     Set Test Variable    ${TEST_NAME}    
     ${TEST_NAME}    Check Data Frame
     ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
+    Log    ${TEST_OBJ}
     Run Test    ${TEST_OBJ}    ${TEST_NAME}
+    
 
+# Expected to fail since SENSOR is not MOTOR recipient
 Data Frame Test 2
     [Tags]    Normal CAN Test
     Set Test Variable    &{TEST_CASE_NODE_1}    node_name=MOTOR    is_sender=${True}    sending_msg_name=MOTOR_STATUS    expected_receiving_msg=None   

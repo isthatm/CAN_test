@@ -6,6 +6,7 @@ import traceback
 import signal
 import os
 import logging
+import inspect
 
 import udsoncan
 from udsoncan.services import *
@@ -19,6 +20,8 @@ from can_test import can_node, db_handler, test_services
 """
 
 def set_interface(db_path, *args):
+    import os
+    print(os.path.abspath(inspect.getfile(TestInterface)))
     return TestInterface(db_path, *args)
 
 
