@@ -4,7 +4,6 @@ import logging
 import json
 from threading import Thread
 from queue import Queue
-import sys
 
 import udsoncan.connections as connections
 import udsoncan.services
@@ -18,14 +17,7 @@ from .uds_data import SupportedServices
 from typing import List, Union
 
 
-"""
-    TODO:
-        +) Solve unhandled thread problems 
-        +) requires session as an argument when intitializing tester
-"""
-
 RECORDED_DATA_PATH = r"./can_test/data.json"
-
 
 class CAN_Node:
 
@@ -221,7 +213,3 @@ class CAN_Node:
         if hasattr(self, 'stack'):
             self.stack.stop()
         self.bus.shutdown()
-
-
-if __name__ == '__main__':
-    print(can.Message.__dict__)
