@@ -16,8 +16,8 @@ class test_services:
     def check_data_frame(self):
         return copy.copy(TestServices.CHECK_DATA_FRAME)
     
-    def _check_service_ECUReset(self):
+    def check_service_ECUReset(self):
         return copy.copy(TestServices.CHECK_SERVICE_ECUReset)
     
-    def check_range(self):
+    def check_service_ReadDataByIdentifier(self):
         return copy.copy(TestServices.CHECK_SERVICE_ReadDataByIdentifier)

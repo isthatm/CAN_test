@@ -72,7 +72,7 @@ class SupportedServices:
             offset += 2
 
         # Supported NRC
-        if len(request.data) < 2 or len(request.data) % 2: # NRC 13: Minimum length and DID format check
+        if len(request.data) < 4 or len(request.data) % 2: # NRC 13: Minimum length and DID format check
             return (Response.Code.IncorrectMessageLengthOrInvalidFormat, bytearray()) 
         # Placeholder: NRC 33
         if supported_did_flag < 0: # NRC 31: None of the requested DIDs are supported by this server 
@@ -97,9 +97,9 @@ class SupportedServices:
         )
 
         # Suporrted NRC
-        if not any(sub_func_availability):
+        if not any(sub_func_availability): # NRC 12
             return (Response.Code.SubFunctionNotSupported, bytearray())
-        elif len(recv_payload) > REQUEST_EXPECTED_LENGTH:
+        elif len(recv_payload) > REQUEST_EXPECTED_LENGTH: # NRC 13
             return (Response.Code.IncorrectMessageLengthOrInvalidFormat, bytearray())
         
         # Positive response

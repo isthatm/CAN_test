@@ -95,13 +95,16 @@ class CAN_Node:
         thread.start()
 
     def _run_diag_request_sender(self, conn: connections, request: Request, queue: Queue):
-        uds_config = udsoncan.configs.default_client_config.copy()
-        # The default timeout is 3s if session is not defined
-        uds_config["p2_timeout"] = 3    
+        try:
+            uds_config = udsoncan.configs.default_client_config.copy()
+            # The default timeout is 3s if session is not defined
+            uds_config["p2_timeout"] = 3    
 
-        with Client(conn, uds_config) as client:
-            diag_resp: Response = client.send_request(request)
-            queue.put(diag_resp)
+            with Client(conn, uds_config) as client:
+                diag_resp: Response = client.send_request(request)
+                queue.put(diag_resp)
+        except Exception as e:
+            queue.put(e)
     
     def get_diag_request(self):
         """

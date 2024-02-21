@@ -1,15 +1,7 @@
-import can
 import logging
-from udsoncan.connections import PythonIsoTpConnection
-from udsoncan.client import Client
-from udsoncan.Response import Response 
 from udsoncan.services import *
-import udsoncan.configs
-import isotp
-from functools import partial
 
-from . import test_interface, test_services, can_node, db_handler
-from udsoncan import Response
+from . import test_interface, test_services
 
 """
     This module is only used for investigating UDS and CAN protocol, implementations on hardware requires modifications
@@ -56,12 +48,13 @@ def uds_test_ECUReset(available_services: test_services.TestServices):
         "node_name": "SERVER",
         "TX_ID": 0x05,
         "RX_ID": 0x02,
+        "sub_function": None
         }
 
     test_obj = test_interface.TestInterface(DB_PATH, tester, server)
     test_obj.proceed_test(available_services.CHECK_SERVICE_ECUReset)
 
-def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices):
+def uds_test_ReadDataByIdentifier1(available_services: test_services.TestServices):
     print("\n========== UDS TEST - ReadDataByIdentifier ==========")
     # didconfig is defined within test_interface
     tester = {
@@ -69,11 +62,35 @@ def uds_test_ReadDataByIdentifier(available_services: test_services.TestServices
         "TX_ID": 0x02,
         "RX_ID": 0x05,
         "did_list": [0xF190, 0xF18C, 0xF191]
+        # "did_list": [0xF191]
         }
     server = {
         "node_name": "SERVER",
         "TX_ID": 0x05,
         "RX_ID": 0x02,
+        "did_list": None
+
+        }
+
+    test_obj = test_interface.TestInterface(DB_PATH, tester, server)
+    test_obj.proceed_test(available_services.CHECK_SERVICE_ReadDataByIdentifier)
+
+def uds_test_ReadDataByIdentifier2(available_services: test_services.TestServices):
+    print("\n========== UDS TEST - ReadDataByIdentifier ==========")
+    # didconfig is defined within test_interface
+    tester = {
+        "node_name": "TESTER",
+        "TX_ID": 0x02,
+        "RX_ID": 0x05,
+        # "did_list": [0xF190, 0xF18C, 0xF191]
+        "did_list": [0xF191]
+        }
+    server = {
+        "node_name": "SERVER",
+        "TX_ID": 0x05,
+        "RX_ID": 0x02,
+        "did_list": None
+
         }
 
     test_obj = test_interface.TestInterface(DB_PATH, tester, server)
@@ -84,6 +101,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, filename="test_log.log", filemode='w')
     services = test_services.TestServices
 
-    data_frame_test(services)
-    uds_test_ECUReset(services)
-    uds_test_ReadDataByIdentifier(services)
+    # data_frame_test(services)
+    # uds_test_ECUReset(services)
+    uds_test_ReadDataByIdentifier2(services)
+    # uds_test_ReadDataByIdentifier1(services)

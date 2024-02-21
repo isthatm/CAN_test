@@ -5,12 +5,11 @@ import threading
 import traceback
 import signal
 import os
-import logging
 import inspect
 
 import udsoncan
 from udsoncan.services import *
-from udsoncan import Request
+from udsoncan import Request, Response
 from can_test import can_node, db_handler, test_services
 
 """
@@ -23,6 +22,10 @@ def set_interface(db_path, *args):
     import os
     print(os.path.abspath(inspect.getfile(TestInterface)))
     return TestInterface(db_path, *args)
+
+
+class SubThreadException(Exception):
+    pass
 
 
 class TestInterface:
@@ -93,6 +96,10 @@ class TestInterface:
 
         except KeyError as e:
             raise KeyError("Key {} is not defined by the dict of this test OR not available in the database".format(e))
+        
+        finally:
+            sending_node.__del__()
+            receiving_node.__del__()
 
     def _check_service_ECUReset(self, tester: dict, server: dict):
         req = ECUReset.make_request(reset_type=tester['sub_function'])
@@ -101,8 +108,8 @@ class TestInterface:
             resp = manager
             interpreted_resp = ECUReset.interpret_response(resp)
             print("CLIENT - interpreted response: \
-                  \n\tResetType: %s \
-                  \n\tPowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
+                \n\tResetType: %s \
+                \n\tPowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
             print("CLIENT - raw response: %s" % resp.data)
 
     def _check_service_ReadDataByIdentifier(self, tester: dict, server: dict):
@@ -110,7 +117,8 @@ class TestInterface:
         did_codec = {
             0xF190: udsoncan.AsciiCodec(17),
             0xF18C: udsoncan.AsciiCodec(4),
-            0xF191: ">H"
+            0xF191: ">H",
+            0xF1: ">H"
         }
         req = ReadDataByIdentifier.make_request(didlist=tester["did_list"], didconfig=did_codec)
 
@@ -133,29 +141,11 @@ class TestInterface:
         tester_node.init_isotp(recv_id=tester['RX_ID'], send_id=tester['TX_ID'])
         server_node.init_isotp(recv_id=server['RX_ID'], send_id=server['TX_ID'])
         
-        self.install_thread_exc_handler()
         tester_node.send_diag_request(request, resp_q) # Sends and receives response from a different thread
         server_node.get_diag_request()
         resp = resp_q.get()
-
+        if not (type(resp) == Response):
+            tester_node.__del__()
+            server_node.__del__()  
+            raise SubThreadException(resp)
         yield resp
-
-    @staticmethod
-    def install_thread_exc_handler():
-        sys.excepthook = sendKillSignal
-        threading.Thread.__init__ = patched_init
-
-def sendKillSignal(etype, value, tb):
-    traceback.print_exception(etype, value, tb)
-    os.kill(os.getpid(), signal.SIGTERM)
-
-original_init = threading.Thread.__init__
-def patched_init(self, *args, **kwargs):
-    original_init(self, *args, **kwargs)
-    original_run = self.run
-    def patched_run(*args, **kw):
-        try:
-            original_run(*args, **kw)
-        except:
-            sys.excepthook(*sys.exc_info())
-    self.run = patched_run
