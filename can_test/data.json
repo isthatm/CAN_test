@@ -1,13 +1,13 @@
 {
     "MOTOR_CMD":
     {
-        "MOTOR_CMD_steer": "0x8",
-        "MOTOR_CMD_drive": "0x10"
+        "MOTOR_CMD_steer": "0x07",
+        "MOTOR_CMD_drive": "0x09"
     },
     
     "MOTOR_STATUS":
     {
             "MOTOR_STATUS_wheel_error": "0",
-            "MOTOR_STATUS_speed": "159"
+            "MOTOR_STATUS_speed": "0x9F"
     }
 }

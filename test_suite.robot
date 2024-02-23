@@ -17,7 +17,7 @@ Data Frame Test 1
     Set Test Variable    &{TEST_CASE_NODE_1}    node_name=MOTOR    is_sender=${True}    sending_msg_name=MOTOR_STATUS    expected_receiving_msg=None   
 
     # A node that is supposed to RECEIVE "MOTOR_STATUS" message
-    Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_STATUS_wheel_error=${0}    MOTOR_STATUS_speed=${159}    
+    Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_STATUS_wheel_error=${0}    MOTOR_STATUS_speed=${0x9F}    
     Set Test Variable    &{EXPECTED_MSG}    MOTOR_STATUS=${EXPECTED_SIGNALS}   
     Set Test Variable    &{TEST_CASE_NODE_2}    node_name=DRIVER    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
    
@@ -53,6 +53,50 @@ Data Frame Test 3
     Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_STATUS_wheel_error=${10}    MOTOR_STATUS_speed=${159}    
     Set Test Variable    &{EXPECTED_MSG}    MOTOR_STATUS=${EXPECTED_SIGNALS}   
     Set Test Variable    &{TEST_CASE_NODE_2}    node_name=DRIVER    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
+    
+    Set Test Variable    ${TEST_NAME}    
+    ${TEST_NAME}    Check Data Frame
+    ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
+    Run Test    ${TEST_OBJ}    ${TEST_NAME}
+
+
+# Expected to FAIL - Out of range
+Data Frame Test 4
+    [Tags]    Data frame CAN Test
+    Set Test Variable    &{TEST_CASE_NODE_1}    node_name=DRIVER    is_sender=${True}    sending_msg_name=MOTOR_CMD    expected_receiving_msg=None   
+
+    Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_CMD_steer=${7}    MOTOR_CMD_drive=${10}
+    Set Test Variable    &{EXPECTED_MSG}    MOTOR_CMD=${EXPECTED_SIGNALS}   
+    Set Test Variable    &{TEST_CASE_NODE_2}    node_name=MOTOR    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
+    
+    Set Test Variable    ${TEST_NAME}    
+    ${TEST_NAME}    Check Data Frame
+    ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
+    Run Test    ${TEST_OBJ}    ${TEST_NAME}
+
+# Expected to PASS
+Data Frame Test 5
+    [Tags]    Data frame CAN Test
+    Set Test Variable    &{TEST_CASE_NODE_1}    node_name=DRIVER    is_sender=${True}    sending_msg_name=MOTOR_CMD    expected_receiving_msg=None   
+
+    Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_CMD_steer=${7}    MOTOR_CMD_drive=${0x09}
+    Set Test Variable    &{EXPECTED_MSG}    MOTOR_CMD=${EXPECTED_SIGNALS}   
+    Set Test Variable    &{TEST_CASE_NODE_2}    node_name=MOTOR    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
+    
+    Set Test Variable    ${TEST_NAME}    
+    ${TEST_NAME}    Check Data Frame
+    ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
+    Run Test    ${TEST_OBJ}    ${TEST_NAME}
+
+
+# Expected to FAIL - TimeoutError
+Data Frame Test 6
+    [Tags]    Data frame CAN Test
+    Set Test Variable    &{TEST_CASE_NODE_1}    node_name=DRIVER    is_sender=${True}    sending_msg_name=MOTOR_CMD    expected_receiving_msg=None   
+
+    Set Test Variable    &{EXPECTED_SIGNALS}    MOTOR_CMD_steer=${7}    MOTOR_CMD_drive=${0x09}
+    Set Test Variable    &{EXPECTED_MSG}    MOTOR_CMD=${EXPECTED_SIGNALS}   
+    Set Test Variable    &{TEST_CASE_NODE_2}    node_name=DBG    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
     
     Set Test Variable    ${TEST_NAME}    
     ${TEST_NAME}    Check Data Frame

@@ -27,7 +27,7 @@ def data_frame_test(available_services: test_services.TestServices):
         "expected_receiving_msg": {
             "MOTOR_STATUS": { 
             "MOTOR_STATUS_wheel_error": 0,
-            "MOTOR_STATUS_speed": 159
+            "MOTOR_STATUS_speed": 0x9F
             }
         }
     }
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, filename="test_log.log", filemode='w')
     services = test_services.TestServices
 
-    # data_frame_test(services)
-    # uds_test_ECUReset(services)
+    data_frame_test(services)
+    uds_test_ECUReset(services)
     uds_test_ReadDataByIdentifier2(services)
-    # uds_test_ReadDataByIdentifier1(services)
+    uds_test_ReadDataByIdentifier1(services)

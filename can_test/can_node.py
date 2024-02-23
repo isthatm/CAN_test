@@ -187,7 +187,7 @@ class CAN_Node:
         msg = self.data_base.db.get_message_by_name(msg_name)
 
         for signal_name, signal_value in signal_values[msg_name].items():
-            data_formatter[signal_name] = int(signal_value, 10)
+            data_formatter[signal_name] = int(signal_value, 16)
 
         encoded_data_frame = msg.encode(data_formatter, scaling=False)
         can_frame = can.Message(data=encoded_data_frame, 
@@ -203,7 +203,7 @@ class CAN_Node:
         msg_name = list(msg.keys())[0]
         comparing_signals = msg[msg_name]
         for signal in self.data_base.db.get_message_by_name(msg_name).signals:
-            if int(comparing_signals[signal.name]) <= 2**(signal.length):
+            if int(str(comparing_signals[signal.name]), 16) <= 2**(signal.length):
                 pass
             else:
                 raise OverflowError("%s: %s. Consider another input value that can be represented with %s byte(s)" % 
