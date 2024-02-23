@@ -4,7 +4,6 @@ import logging
 import json
 from threading import Thread
 from queue import Queue
-import sys
 
 import udsoncan.connections as connections
 import udsoncan.services
@@ -18,14 +17,7 @@ from .uds_data import SupportedServices
 from typing import List, Union
 
 
-"""
-    TODO:
-        +) Solve unhandled thread problems 
-        +) requires session as an argument when intitializing tester
-"""
-
 RECORDED_DATA_PATH = r"./can_test/data.json"
-
 
 class CAN_Node:
 
@@ -86,46 +78,6 @@ class CAN_Node:
         task = self.bus.send_periodic(msgs=can_frame, period=period, duration=duration)
         assert isinstance(task, can.CyclicSendTaskABC)
         return task   
-
-    def send_diag_request(self, request: Request, queue: Queue):
-        """ Used by the CLIENT """
-        self._check_stack_availability()
-        connection = connections.PythonIsoTpConnection(self.stack)
-        thread = Thread(target=self._run_diag_request_sender, args=(connection, request, queue))
-        thread.start()
-
-    def _run_diag_request_sender(self, conn: connections, request: Request, queue: Queue):
-        try:
-            uds_config = udsoncan.configs.default_client_config.copy()
-            # The default timeout is 3s if session is not defined
-            uds_config["p2_timeout"] = 3    
-
-            with Client(conn, uds_config) as client:
-                diag_resp: Response = client.send_request(request)
-                queue.put(diag_resp)
-        except Exception as e:
-            queue.put(e)
-    
-    def get_diag_request(self):
-        """
-            Used by the SERVER
-            Check the whether the server has received the request, if it did, then send the response immediately 
-        """
-        self._check_stack_availability()
-        self.stack.start()
-
-        while True:
-            recv_msg = self.receive_isotp_msg(timeout=3)
-            if recv_msg == None: 
-                break
-            else:
-                print("SERVER receives: %s" % recv_msg)
-                byte_service = recv_msg[0:1]
-                requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'big'))
-                resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)
-                resp = Response(service=requested_service, code=resp_code, data=bytes(resp_data))
-                payload = resp.get_payload()
-                self.send_isotp_msg(payload)
 
     def receive(self, time_out: int=1) -> Union[can.Message, None]:
         """
@@ -212,6 +164,47 @@ class CAN_Node:
     def _check_stack_availability(self):
         if not getattr(self ,'stack', False):
             raise RuntimeError("The network layer - CANTp has not been initialized")
+       
+    # ============ UDS =============
+    def send_diag_request(self, request: Request, queue: Queue):
+        """ Used by the CLIENT """
+        self._check_stack_availability()
+        connection = connections.PythonIsoTpConnection(self.stack)
+        thread = Thread(target=self._run_diag_request_sender, args=(connection, request, queue))
+        thread.start()
+
+    def _run_diag_request_sender(self, conn: connections, request: Request, queue: Queue):
+        try:
+            uds_config = udsoncan.configs.default_client_config.copy()
+            # The default timeout is 3s if session is not defined
+            uds_config["p2_timeout"] = 3    
+
+            with Client(conn, uds_config) as client:
+                diag_resp: Response = client.send_request(request)
+                queue.put(diag_resp)
+        except Exception as e:
+            queue.put(e)
+
+    def get_diag_request(self):
+        """
+            Used by the SERVER
+            Check the whether the server has received the request, if it did, then send the response immediately 
+        """
+        self._check_stack_availability()
+        self.stack.start()
+
+        while True:
+            recv_msg = self.receive_isotp_msg(timeout=3)
+            if recv_msg == None: 
+                break
+            else:
+                print("SERVER receives: %s" % recv_msg)
+                byte_service = recv_msg[0:1]
+                requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'big'))
+                resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)
+                resp = Response(service=requested_service, code=resp_code, data=bytes(resp_data))
+                payload = resp.get_payload()
+                self.send_isotp_msg(payload)
 
     @staticmethod
     def _error_handler(error):
@@ -221,7 +214,3 @@ class CAN_Node:
         if hasattr(self, 'stack'):
             self.stack.stop()
         self.bus.shutdown()
-
-
-if __name__ == '__main__':
-    print(can.Message.__dict__)
