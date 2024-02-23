@@ -8,6 +8,6 @@
     "MOTOR_STATUS":
     {
             "MOTOR_STATUS_wheel_error": "0",
-            "MOTOR_STATUS_speed": "0x9F"
+            "MOTOR_STATUS_speed": "159"
     }
 }
