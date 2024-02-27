@@ -26,4 +26,4 @@ class CAN_database:
 
                 
 if __name__ == '__main__':
-    pass
+    db = CAN_database("./Example.dbc")

@@ -67,9 +67,9 @@ class CAN_Node:
         """ Send a can message through CAN-TP layer - OSI LV3,4 """
         self.stack.send(msg)     
     
-    def send(self, msg_name):
+    def send(self):
         """ Send a can message on the bus - OSI LV1,2 """
-        can_frame = self._pack_frame(msg_name)
+        can_frame = self._pack_frame(self.kwargs["sending_msg_name"])
         self.bus.send(can_frame)
      
     def send_periodic(self, period: int, duration: int) -> List[can.CyclicSendTaskABC]:
@@ -108,13 +108,13 @@ class CAN_Node:
                 if all([isinstance(sig_val, int) for _, sig_val in expected_signals.items()]):
                     expected_frame = db_msg.encode(expected_signals, scaling=False)
                     assert arriving_msg.data == expected_frame
-                    return arriving_msg.data
+                    return arriving_msg
                 else:
                     raise ValueError("Signal values must be integers.")
                 
             except AssertionError as error:
                 self._error_handler(error)
-                raise AssertionError("The receiving data frame is not identical to the expected one.")
+                raise AssertionError("The receiving data frame is not identical to the expected one: Received: {}; Expected: {}". format(arriving_msg.data, expected_frame))
         return None
 
     def _pack_frame(self, msg_name: str) -> can.Message:
@@ -139,7 +139,7 @@ class CAN_Node:
         msg = self.data_base.db.get_message_by_name(msg_name)
 
         for signal_name, signal_value in signal_values[msg_name].items():
-            data_formatter[signal_name] = int(signal_value, 16)
+            data_formatter[signal_name] = int(signal_value, 16) if "x" in signal_value else int(signal_value, 10)
 
         encoded_data_frame = msg.encode(data_formatter, scaling=False)
         can_frame = can.Message(data=encoded_data_frame, 
@@ -155,7 +155,9 @@ class CAN_Node:
         msg_name = list(msg.keys())[0]
         comparing_signals = msg[msg_name]
         for signal in self.data_base.db.get_message_by_name(msg_name).signals:
-            if int(str(comparing_signals[signal.name]), 16) <= 2**(signal.length):
+            str_comp_signal = str(comparing_signals[signal.name])
+            int_comp_signal = int(str_comp_signal, 16) if "x" in str_comp_signal else int(str_comp_signal, 10) 
+            if int(int_comp_signal) <= 2**(signal.length):
                 pass
             else:
                 raise OverflowError("%s: %s. Consider another input value that can be represented with %s byte(s)" % 
@@ -198,7 +200,7 @@ class CAN_Node:
             if recv_msg == None: 
                 break
             else:
-                print("SERVER receives: %s" % recv_msg)
+                print("SERVER receives: %s" % recv_msg.decode('ascii'))
                 byte_service = recv_msg[0:1]
                 requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'big'))
                 resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)

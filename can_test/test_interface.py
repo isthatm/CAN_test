@@ -1,10 +1,7 @@
 import sys
 from contextlib import contextmanager
 from queue import Queue
-import threading
-import traceback
-import signal
-import os
+import binascii
 import inspect
 
 import udsoncan
@@ -19,8 +16,6 @@ from can_test import can_node, db_handler, test_services
 """
 
 def set_interface(db_path, *args):
-    import os
-    print(os.path.abspath(inspect.getfile(TestInterface)))
     return TestInterface(db_path, *args)
 
 
@@ -107,10 +102,10 @@ class TestInterface:
         with self.uds_mangager(tester, server, req) as manager:
             resp = manager
             interpreted_resp = ECUReset.interpret_response(resp)
+            print("CLIENT - raw response: %s" % self.bytes_decoder(resp.original_payload))
             print("CLIENT - interpreted response: \
                 \n\tResetType: %s \
                 \n\tPowerDownTime: %s" % (interpreted_resp.service_data.reset_type_echo, interpreted_resp.service_data.powerdown_time))            
-            print("CLIENT - raw response: %s" % resp.data)
 
     def _check_service_ReadDataByIdentifier(self, tester: dict, server: dict):
         # Definitions for DID values represented in `bytes` objects
@@ -126,11 +121,11 @@ class TestInterface:
             resp = manager
             interpreted_resp = ReadDataByIdentifier.interpret_response(resp, tester["did_list"], did_codec)
             did_values = interpreted_resp.service_data.values
+            print("CLIENT - raw response: %s" % self.bytes_decoder(resp.data))
             print("CLIENT - interpreted response:")
             list(map(lambda did:
                 print("\t [%s]: %s" % (hex(did), did_values[did])), list(did_values.keys())
             ))
-            print("CLIENT - raw response: %s" % resp.data)
     
     @contextmanager
     def uds_mangager(self, tester: dict, server: dict, request: Request):
@@ -149,3 +144,7 @@ class TestInterface:
             server_node.__del__()  
             raise SubThreadException(resp)
         yield resp
+
+    @staticmethod
+    def bytes_decoder(bytes_obj: bytes) -> str:
+        return binascii.hexlify(bytes_obj).decode('ascii')

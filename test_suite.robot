@@ -104,6 +104,21 @@ Data Frame Test 6
     Run Test    ${TEST_OBJ}    ${TEST_NAME}
 
 
+# Expected to FAIL - wrong message name
+Data Frame Test 7
+    [Tags]    Data frame CAN Test
+    Set Test Variable    &{TEST_CASE_NODE_1}    node_name=SENSOR    is_sender=${True}    sending_msg_name=SENSOR_SORNARS    expected_receiving_msg=None   
+
+    Set Test Variable    &{EXPECTED_SIGNALS}    SENSOR_SONARS_mux=${0Xf}    SENSOR_SONARS_err_count=${0x123}
+    Set Test Variable    &{EXPECTED_MSG}    MOTOR_CMD=${EXPECTED_SIGNALS}   
+    Set Test Variable    &{TEST_CASE_NODE_2}    node_name=IO    is_sender=${False}    sending_msg_name=${None}    expected_receiving_msg=${EXPECTED_MSG}    
+    
+    Set Test Variable    ${TEST_NAME}    
+    ${TEST_NAME}    Check Data Frame
+    ${TEST_OBJ} =    Initialize Interface    ${DB_PATH}    ${TEST_CASE_NODE_1}    ${TEST_CASE_NODE_2}
+    Run Test    ${TEST_OBJ}    ${TEST_NAME}
+    
+
 # Expected to PASS
 ECUReset Test 1
     [Tags]    UDS

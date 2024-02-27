@@ -7,7 +7,20 @@
     
     "MOTOR_STATUS":
     {
-            "MOTOR_STATUS_wheel_error": "0",
+            "MOTOR_STATUS_wheel_error": "0x0",
             "MOTOR_STATUS_speed": "159"
-    }
+    },
+     "SENSOR_SONARS":
+     {
+        "SENSOR_SONARS_mux": "15",
+        "SENSOR_SONARS_err_count": "0x123",
+        "SENSOR_SONARS_left": "0x439",
+        "SENSOR_SONARS_middle": "0xB51",
+        "SENSOR_SONARS_right": "0xA4D",
+        "SENSOR_SONARS_rear": "0xC1A",
+        "SENSOR_SONARS_no_filt_left": "0xFFF",
+        "SENSOR_SONARS_no_filt_middle": "0x7E2",
+        "SENSOR_SONARS_no_filt_right": "0x186", 
+        "SENSOR_SONARS_no_filt_rear": "0x4F7"
+     }
 }
