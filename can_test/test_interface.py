@@ -79,7 +79,6 @@ class TestInterface:
                 received_msg = receiving_node.receive(time_out=1.5)
                 
                 if received_msg == None:
-                    #TODO: raise TimeoutError based on actual time
                     if(len(rx_buffer) < (DEFAULT_TEST_DURATION // DEFAULT_TEST_PERIOD) + 1):
                         raise TimeoutError("No message is detected on the bus.")
                     else:

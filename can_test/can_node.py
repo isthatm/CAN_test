@@ -200,7 +200,9 @@ class CAN_Node:
             if recv_msg == None: 
                 break
             else:
-                print("SERVER receives: %s" % recv_msg.decode('ascii'))
+                # '02x': the formatted byte should be at least `2`-characters wide (E.g. x5F)
+                #        otw, it would be padded with `0`. Then format the value as a lowercase hex
+                print("SERVER receives: %s" % ''.join(format(byte, '02x') for byte in recv_msg))
                 byte_service = recv_msg[0:1]
                 requested_service = BaseService.from_request_id(int.from_bytes(byte_service, 'big'))
                 resp_code, resp_data = SupportedServices.service_resp(requested_service, recv_msg)
