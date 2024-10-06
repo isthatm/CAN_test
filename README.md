@@ -11,4 +11,6 @@
   + 3rd: Application layer, testers define services that they wish to get the information from
 
     
-![Picture1](https://github.com/user-attachments/assets/7c21d6fc-b5fc-4ac4-b364-3ffe0fadaf83)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/7c21d6fc-b5fc-4ac4-b364-3ffe0fadaf83" width="600">
+</p>
